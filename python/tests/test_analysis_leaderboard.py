@@ -11,6 +11,7 @@ from ksim.analysis.leaderboard import (
     render_markdown,
     summarize,
 )
+from ksim.analysis.stats import Interval
 
 
 class TestLoadReports:
@@ -83,16 +84,19 @@ class TestSummarize:
         """Rows sorted by scenario then policy name."""
         reports = [
             {"scenario": "z", "policy": "z_policy", "seed": 0, "metrics": {"m": 1.0}},
+            {"scenario": "z", "policy": "a_policy", "seed": 0, "metrics": {"m": 1.0}},
             {"scenario": "a", "policy": "z_policy", "seed": 0, "metrics": {"m": 1.0}},
             {"scenario": "a", "policy": "a_policy", "seed": 0, "metrics": {"m": 1.0}},
         ]
 
         rows = summarize(reports, baseline="a_policy")
 
-        # Sorted: scenario a before z; within a, a_policy before z_policy
-        assert rows[0].scenario == "a" and rows[0].policy == "a_policy"
-        assert rows[1].scenario == "a" and rows[1].policy == "z_policy"
-        assert rows[2].scenario == "z" and rows[2].policy == "z_policy"
+        assert [(row.scenario, row.policy) for row in rows] == [
+            ("a", "a_policy"),
+            ("a", "z_policy"),
+            ("z", "a_policy"),
+            ("z", "z_policy"),
+        ]
 
     def test_normalized_both_zero_is_1(self):
         """When both baseline and candidate mean are 0, normalized = 1.0."""
@@ -171,8 +175,9 @@ class TestRenderMarkdown:
 
     def test_table_structure(self):
         """Output contains markdown table with policy, seeds, and metric columns."""
-        interval = {"m": MetricSummary(interval=None, normalized=1.0, p_value=1.0)}
-        interval["m"].interval = type("Interval", (), {"mean": 10.0, "low": 9.0, "high": 11.0})()
+        interval = {
+            "m": MetricSummary(interval=Interval(10.0, 9.0, 11.0), normalized=1.0, p_value=1.0)
+        }
         rows = [
             PolicyRow(scenario="s1", policy="p1", seeds=2, metrics=interval),
         ]
@@ -189,7 +194,7 @@ class TestRenderMarkdown:
         # Create metrics with p_value < 0.05 to trigger star marking
         interval_sig = {
             "m": MetricSummary(
-                interval=type("Interval", (), {"mean": 10.0, "low": 9.0, "high": 11.0})(),
+                interval=Interval(10.0, 9.0, 11.0),
                 normalized=2.0,
                 p_value=0.01,
             )
@@ -206,7 +211,7 @@ class TestRenderMarkdown:
         """Output has no * when p_value >= 0.05."""
         interval_not_sig = {
             "m": MetricSummary(
-                interval=type("Interval", (), {"mean": 10.0, "low": 9.0, "high": 11.0})(),
+                interval=Interval(10.0, 9.0, 11.0),
                 normalized=1.1,
                 p_value=0.5,
             )
@@ -224,7 +229,7 @@ class TestRenderMarkdown:
         """Multiple scenarios produce multiple tables."""
         interval = {
             "m": MetricSummary(
-                interval=type("Interval", (), {"mean": 10.0, "low": 9.0, "high": 11.0})(),
+                interval=Interval(10.0, 9.0, 11.0),
                 normalized=1.0,
                 p_value=1.0,
             )
