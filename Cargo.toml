@@ -16,6 +16,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.98.1"
 license-file = "LICENCE"
+publish = false
 repository = "https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler"
 
 [workspace.dependencies]
