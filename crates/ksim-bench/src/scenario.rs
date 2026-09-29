@@ -12,7 +12,7 @@ use ksim_perf::{queueing::QueueingModel, utilization::UtilizationModel};
 use ksim_workload::synthetic::{
     Constant, CurveWorkload, DemandCurve, DemandProfile, FlashCrowd, Ramp, Sinusoid, Step,
 };
-use ksim_workload::trace::{TraceError, TraceFile};
+use ksim_workload::trace::{Interpolation, TraceError, TraceFile, TraceOptions, TraceWorkload};
 use serde::Deserialize;
 use std::{path::Path, sync::Arc};
 
@@ -145,6 +145,27 @@ fn one() -> f64 {
     1.0
 }
 
+impl TraceScenario {
+    fn validate(&self) -> Result<(), ScenarioError> {
+        require(self.compress > 0.0, "trace", "compress must be positive")?;
+        require(self.scale > 0.0, "trace", "scale must be positive")
+    }
+
+    fn options(&self, services: Vec<String>) -> TraceOptions {
+        TraceOptions {
+            services: Some(services),
+            start: SimDuration::from_secs(self.start_s),
+            compress: self.compress,
+            scale: self.scale,
+            interpolation: match self.interpolation {
+                InterpolationScenario::Step => Interpolation::Step,
+                InterpolationScenario::Linear => Interpolation::Linear,
+            },
+            wrap: self.wrap,
+        }
+    }
+}
+
 /// A benchmark scenario file. Durations are seconds; the workload seed of noisy curves is the
 /// episode seed so every seed is a different but reproducible realisation.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -186,8 +207,9 @@ impl Scenario {
     /// # Errors
     /// I/O errors reading the scenario and every error of [`Scenario::from_toml_str`].
     pub fn from_toml_file(path: impl AsRef<Path>) -> Result<Self, ScenarioError> {
-        let _ = path;
-        todo!()
+        let path = path.as_ref();
+        let text = std::fs::read_to_string(path)?;
+        Self::parse(&text, path.parent().unwrap_or_else(|| Path::new(".")))
     }
 
     fn parse(text: &str, base: &Path) -> Result<Self, ScenarioError> {
@@ -201,15 +223,48 @@ impl Scenario {
         let Some(trace) = &self.trace else {
             return Ok(());
         };
-        let _ = (trace, base, &mut self.loaded_trace);
-        todo!()
+        let file = Arc::new(TraceFile::open(base.join(&trace.path))?);
+        let names = self.trace_service_names();
+        TraceWorkload::new(Arc::clone(&file), trace.options(names))?;
+        self.loaded_trace = Some(file);
+        Ok(())
+    }
+
+    fn trace_service_names(&self) -> Vec<String> {
+        self.services
+            .iter()
+            .filter_map(|service| service.curve.trace_service())
+            .map(str::to_owned)
+            .collect()
     }
 
     fn validate(&self) -> Result<(), ScenarioError> {
         self.validate_shape()?;
         validate_slo(&self.slo)?;
         self.pools.iter().try_for_each(PoolScenario::validate)?;
-        self.services.iter().try_for_each(ServiceScenario::validate)
+        self.services
+            .iter()
+            .try_for_each(ServiceScenario::validate)?;
+        self.validate_trace()
+    }
+
+    fn validate_trace(&self) -> Result<(), ScenarioError> {
+        let trace_curves = self
+            .services
+            .iter()
+            .filter(|service| service.curve.trace_service().is_some())
+            .count();
+        match &self.trace {
+            Some(trace) if trace_curves == self.services.len() => trace.validate(),
+            Some(_) => Err(ScenarioError::Invalid(
+                "trace: every service must use a `trace` curve when a [trace] table exists"
+                    .to_owned(),
+            )),
+            None if trace_curves > 0 => Err(ScenarioError::Invalid(
+                "trace: `trace` curves need a [trace] table".to_owned(),
+            )),
+            None => Ok(()),
+        }
     }
 
     fn validate_shape(&self) -> Result<(), ScenarioError> {
@@ -242,12 +297,28 @@ impl Scenario {
     /// The scenario's true demand for `seed`, also used to drive the simulation; trace
     /// scenarios replay their trace (a `TraceWorkload` over the services' trace names, in
     /// scenario order) and ignore the seed.
+    ///
+    /// # Panics
+    /// Never for a scenario built by the loaders, which validate the trace up front.
     #[must_use]
     pub fn workload(&self, seed: u64) -> Box<dyn WorkloadSource> {
+        match (&self.trace, &self.loaded_trace) {
+            (Some(trace), Some(file)) => {
+                let options = trace.options(self.trace_service_names());
+                Box::new(
+                    TraceWorkload::new(Arc::clone(file), options)
+                        .expect("trace options were validated when the scenario was loaded"),
+                )
+            }
+            _ => self.synthetic_workload(seed),
+        }
+    }
+
+    fn synthetic_workload(&self, seed: u64) -> Box<dyn WorkloadSource> {
         let services = self
             .services
             .iter()
-            .map(|service| (service.curve.build(seed), service.demand_profile()))
+            .filter_map(|service| Some((service.curve.synthetic(seed)?, service.demand_profile())))
             .collect();
         Box::new(CurveWorkload::new(services))
     }
@@ -447,8 +518,16 @@ impl ServiceScenario {
 }
 
 impl CurveScenario {
-    fn build(&self, seed: u64) -> Box<dyn DemandCurve> {
-        match *self {
+    fn trace_service(&self) -> Option<&str> {
+        match self {
+            Self::Trace { service } => Some(service),
+            _ => None,
+        }
+    }
+
+    /// `None` for trace curves, which are replayed by a `TraceWorkload` instead.
+    fn synthetic(&self, seed: u64) -> Option<Box<dyn DemandCurve>> {
+        Some(match *self {
             Self::Constant { rate } => Box::new(Constant { rate }),
             Self::Step {
                 before,
@@ -493,8 +572,8 @@ impl CurveScenario {
                 start: SimTime::from_secs(start_s),
                 decay: SimDuration::from_secs(decay_s),
             }),
-            Self::Trace { .. } => todo!(),
-        }
+            Self::Trace { .. } => return None,
+        })
     }
 }
 
