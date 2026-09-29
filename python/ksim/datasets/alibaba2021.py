@@ -11,6 +11,12 @@ import polars as pl
 
 RATE_METRICS = ("providerRPC_MCR", "HTTP_MCR")
 
+_ID_TYPES: dict[str, pl.DataType | type[pl.DataType]] = {
+    "timestamp": pl.Int64,
+    "msname": pl.String,
+    "msinstanceid": pl.String,
+}
+
 
 def load(
     ms_resource: list[Path],
@@ -25,4 +31,23 @@ def load(
     published, so both are assumptions), `request_rate` = sum of RATE_METRICS values for the
     same (timestamp, instance), 0 when absent. Rows are the outer join of both tables on
     (timestamp, msname, msinstanceid)."""
-    raise NotImplementedError
+    keys = ["timestamp", "msname", "msinstanceid"]
+    resources = pl.scan_csv(ms_resource, schema_overrides=_ID_TYPES)
+    rates = (
+        pl.scan_csv(ms_rt_qps, schema_overrides=_ID_TYPES)
+        .filter(pl.col("metric").is_in(RATE_METRICS))
+        .group_by(keys)
+        .agg(pl.col("value").sum().alias("request_rate"))
+    )
+    return (
+        resources.join(rates, on=keys, how="full", coalesce=True)
+        .select(
+            (pl.col("timestamp") / 1000).alias("time_s"),
+            pl.col("msname").alias("service"),
+            pl.col("msinstanceid").alias("instance"),
+            pl.col("request_rate").fill_null(0.0),
+            (pl.col("cpu_utilization") * container_cpu_millis).alias("cpu_millis"),
+            (pl.col("memory_utilization") * container_memory_bytes).alias("memory_bytes"),
+        )
+        .collect()
+    )
