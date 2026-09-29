@@ -4,6 +4,7 @@ use crate::{performance::ServiceSignals, resources::Resources, time::SimDuration
 pub struct ServiceObservation {
     pub desired: u32,
     pub ready: u32,
+    /// Not-ready pods of the service (`Pending` plus `Starting`).
     pub pending: u32,
     pub unschedulable: u32,
     pub requests: Resources,
@@ -34,6 +35,9 @@ pub struct ScrapeConfig {
 
 impl Default for ScrapeConfig {
     fn default() -> Self {
-        todo!()
+        Self {
+            resolution: SimDuration::from_secs(15),
+            lag_scrapes: 1,
+        }
     }
 }

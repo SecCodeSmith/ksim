@@ -11,24 +11,23 @@ impl SimTime {
 
     #[must_use]
     pub const fn from_millis(millis: u64) -> Self {
-        let _ = millis;
-        todo!()
+        Self(millis)
     }
 
     #[must_use]
     pub const fn from_secs(secs: u64) -> Self {
-        let _ = secs;
-        todo!()
+        Self(secs.saturating_mul(1000))
     }
 
     #[must_use]
     pub const fn as_millis(self) -> u64 {
-        todo!()
+        self.0
     }
 
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn as_secs_f64(self) -> f64 {
-        todo!()
+        self.0 as f64 / 1000.0
     }
 }
 
@@ -37,30 +36,28 @@ impl SimDuration {
 
     #[must_use]
     pub const fn from_millis(millis: u64) -> Self {
-        let _ = millis;
-        todo!()
+        Self(millis)
     }
 
     #[must_use]
     pub const fn from_secs(secs: u64) -> Self {
-        let _ = secs;
-        todo!()
+        Self(secs.saturating_mul(1000))
     }
 
     #[must_use]
     pub const fn as_millis(self) -> u64 {
-        todo!()
+        self.0
     }
 
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn as_secs_f64(self) -> f64 {
-        todo!()
+        self.0 as f64 / 1000.0
     }
 
     #[must_use]
     pub fn saturating_mul(self, factor: u64) -> Self {
-        let _ = factor;
-        todo!()
+        Self(self.0.saturating_mul(factor))
     }
 }
 
@@ -68,8 +65,7 @@ impl Add<SimDuration> for SimTime {
     type Output = SimTime;
 
     fn add(self, rhs: SimDuration) -> SimTime {
-        let _ = rhs;
-        todo!()
+        SimTime(self.0.saturating_add(rhs.0))
     }
 }
 
@@ -78,7 +74,6 @@ impl Sub for SimTime {
     type Output = SimDuration;
 
     fn sub(self, rhs: SimTime) -> SimDuration {
-        let _ = rhs;
-        todo!()
+        SimDuration(self.0.saturating_sub(rhs.0))
     }
 }

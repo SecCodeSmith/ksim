@@ -13,5 +13,6 @@ pub mod performance;
 pub mod resources;
 pub mod rng;
 pub mod scheduler;
+mod scrape;
 pub mod time;
 pub mod workload;

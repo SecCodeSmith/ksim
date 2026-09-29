@@ -20,19 +20,22 @@ impl Resources {
 
     #[must_use]
     pub fn fits_in(self, available: Resources) -> bool {
-        let _ = available;
-        todo!()
+        self.cpu_millis <= available.cpu_millis && self.memory_bytes <= available.memory_bytes
     }
 
     #[must_use]
     pub fn checked_sub(self, other: Resources) -> Option<Resources> {
-        let _ = other;
-        todo!()
+        Some(Resources::new(
+            self.cpu_millis.checked_sub(other.cpu_millis)?,
+            self.memory_bytes.checked_sub(other.memory_bytes)?,
+        ))
     }
 
     #[must_use]
     pub fn saturating_add(self, other: Resources) -> Resources {
-        let _ = other;
-        todo!()
+        Resources::new(
+            self.cpu_millis.saturating_add(other.cpu_millis),
+            self.memory_bytes.saturating_add(other.memory_bytes),
+        )
     }
 }
