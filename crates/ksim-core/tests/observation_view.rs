@@ -87,7 +87,8 @@ fn observation_nodes_ascending_with_properties() {
         // Placement pods on this node should match.
         for placement in &obs.node_pods[node.pods.clone()] {
             assert_eq!(
-                placement.requests, Resources::new(100, 128 * 1024 * 1024),
+                placement.requests,
+                Resources::new(100, 128 * 1024 * 1024),
                 "placement should match service requests"
             );
         }
@@ -144,7 +145,10 @@ fn pool_observation_has_allocatable_and_counts() {
     assert_eq!(pool.max_nodes, 5, "pool max_nodes should match spec");
 
     // ready should be count of Ready nodes.
-    assert!(pool.ready >= 2, "should have at least 2 ready nodes initially");
+    assert!(
+        pool.ready >= 2,
+        "should have at least 2 ready nodes initially"
+    );
 }
 
 #[test]

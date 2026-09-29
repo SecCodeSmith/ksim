@@ -91,7 +91,10 @@ fn single_sample_percentile() {
     let bucket = opts.find_bucket(100.0);
     let expected = opts.bucket_start(bucket + 1);
     let p50 = hist.percentile(0.5);
-    assert!(p50 > 100.0, "percentile(0.5)={p50} should exceed the sample");
+    assert!(
+        p50 > 100.0,
+        "percentile(0.5)={p50} should exceed the sample"
+    );
     assert!(
         (p50 - expected).abs() < 1e-9,
         "percentile(0.5)={p50} should equal the bucket end {expected}"

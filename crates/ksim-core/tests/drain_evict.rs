@@ -46,7 +46,10 @@ fn drain_node_with_pods_becomes_draining() {
     // Get a Ready node to drain.
     sim.step(&Actions::none());
     let initial_obs = sim.observation();
-    let node_to_drain = initial_obs.nodes.iter().find(|n| n.phase == NodePhase::Ready);
+    let node_to_drain = initial_obs
+        .nodes
+        .iter()
+        .find(|n| n.phase == NodePhase::Ready);
     assert!(
         node_to_drain.is_some(),
         "should have at least one Ready node to drain"
@@ -125,7 +128,8 @@ fn drain_node_pods_become_terminating_replacements_created() {
     let drained_node = obs.nodes.iter().find(|n| n.id == node_to_drain);
     if let Some(node) = drained_node {
         assert_eq!(
-            node.pods.end - node.pods.start, 0,
+            node.pods.end - node.pods.start,
+            0,
             "drained node should have no bound pods after drain action"
         );
     }
@@ -221,8 +225,7 @@ fn drain_below_min_nodes_is_ignored() {
 
     sim.step(&Actions::none());
     let initial_obs = sim.observation();
-    let initial_ready_count = initial_obs
-        .pools[0]
+    let initial_ready_count = initial_obs.pools[0]
         .ready
         .saturating_add(initial_obs.pools[0].provisioning);
 
@@ -233,10 +236,7 @@ fn drain_below_min_nodes_is_ignored() {
     sim.step(&drain_action);
 
     let obs = sim.observation();
-    let new_count = obs
-        .pools[0]
-        .ready
-        .saturating_add(obs.pools[0].provisioning);
+    let new_count = obs.pools[0].ready.saturating_add(obs.pools[0].provisioning);
 
     assert_eq!(
         new_count, initial_ready_count,
@@ -287,7 +287,10 @@ fn evict_marks_outdated_pods_terminating() {
 
     let obs_after_requests = sim.observation();
     let outdated_count = obs_after_requests.services[0].outdated;
-    assert!(outdated_count > 0, "should have outdated pods after requests change");
+    assert!(
+        outdated_count > 0,
+        "should have outdated pods after requests change"
+    );
 
     // Evict some outdated pods.
     let mut evict_action = Actions::none();

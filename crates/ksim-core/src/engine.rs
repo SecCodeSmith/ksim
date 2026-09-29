@@ -6,7 +6,10 @@ use crate::{
     event::EventQueue,
     ids::{NodeId, PodId, PoolId, ServiceId},
     lifecycle::{DefaultLatencies, LatencyModel, crash_loop_backoff},
-    observation::{Observation, PoolObservation, ScrapeConfig, ServiceObservation},
+    observation::{
+        NodeObservation, Observation, PodPlacement, PoolObservation, ScrapeConfig,
+        ServiceObservation,
+    },
     performance::{PerformanceModel, ServiceCapacity, ServiceSignals},
     resources::Resources,
     rng::{Concern, RngStreams},
@@ -151,6 +154,7 @@ impl SimulationBuilder {
             lifecycle_rng: RngStreams::new(self.seed).stream(Concern::Lifecycle),
             workload,
             performance,
+            signals: Vec::new(),
         };
         simulation.warm_start();
         Ok(simulation)
@@ -187,6 +191,7 @@ pub struct Simulation {
     workload: Box<dyn WorkloadSource>,
     performance: Box<dyn PerformanceModel>,
     metrics: MetricsPipeline,
+    signals: Vec<ServiceSignals>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -205,9 +210,10 @@ impl Simulation {
         self.apply_actions(actions);
         self.now = self.now + self.tick;
         self.apply_due_events();
+        self.remove_drained_nodes();
         self.schedule_pending_pods();
-        let signals = self.evaluate_services();
-        self.metrics.scrape(self.now, signals);
+        self.evaluate_services();
+        self.metrics.scrape(self.now, &self.signals);
         self.publish_observation();
         &self.observation
     }
@@ -249,7 +255,10 @@ impl Simulation {
     fn apply_actions(&mut self, actions: &Actions) {
         self.apply_request_changes(&actions.requests);
         self.apply_replica_changes(&actions.replicas);
+        self.apply_evictions(&actions.evict);
+        self.apply_drains(&actions.drain);
         self.apply_pool_deltas(&actions.pool_delta);
+        self.reconcile_all_services();
     }
 
     fn apply_request_changes(&mut self, requests: &[Option<Resources>]) {
@@ -266,8 +275,48 @@ impl Simulation {
         for (index, replicas) in replicas.iter().enumerate().take(self.desired.len()) {
             if let Some(replicas) = replicas {
                 self.desired[index] = *replicas;
-                self.reconcile_replicas(ServiceId(index_to_id(index)));
             }
+        }
+    }
+
+    fn apply_evictions(&mut self, evictions: &[u32]) {
+        let services = self.cluster.service_count();
+        for (index, &count) in evictions.iter().enumerate().take(services) {
+            let service = ServiceId(index_to_id(index));
+            for pod in self.cluster.pods_to_evict(service, count as usize) {
+                self.delete_pod(pod);
+            }
+        }
+    }
+
+    fn apply_drains(&mut self, nodes: &[NodeId]) {
+        for &node in nodes {
+            if self.may_drain(node) {
+                self.drain_node(node);
+            }
+        }
+    }
+
+    fn may_drain(&self, node: NodeId) -> bool {
+        let Some(phase) = self.cluster.node_phase(node) else {
+            return false;
+        };
+        let pool = self.cluster.node_pool(node);
+        let schedulable = self.cluster.count_nodes(pool, NodePhase::Ready)
+            + self.cluster.count_nodes(pool, NodePhase::Provisioning);
+        phase != NodePhase::Draining && schedulable > self.cluster.pool_spec(pool).min_nodes
+    }
+
+    fn drain_node(&mut self, node: NodeId) {
+        self.cluster.set_node_phase(node, NodePhase::Draining);
+        for pod in self.cluster.node_pod_ids(node).to_vec() {
+            self.delete_pod(pod);
+        }
+    }
+
+    fn reconcile_all_services(&mut self) {
+        for index in 0..self.cluster.service_count() {
+            self.reconcile_replicas(ServiceId(index_to_id(index)));
         }
     }
 
@@ -277,16 +326,15 @@ impl Simulation {
         for _ in active..desired {
             self.cluster.create_pod(service, self.now);
         }
-        for pod in self
-            .cluster
-            .pods_to_delete(service, active.saturating_sub(desired))
-        {
-            self.delete_pod(pod);
+        if active > desired {
+            for pod in self.cluster.pods_to_delete(service, active - desired) {
+                self.delete_pod(pod);
+            }
         }
     }
 
     fn active_pod_count(&self, service: ServiceId) -> usize {
-        self.cluster.pods_of(service).len()
+        self.cluster.service_pod_ids(service).len()
             - self.cluster.count_pods(service, PodPhase::Terminating) as usize
     }
 
@@ -294,6 +342,9 @@ impl Simulation {
         let Some(view) = self.cluster.pod(pod) else {
             return;
         };
+        if view.phase == PodPhase::Terminating {
+            return;
+        }
         if view.node.is_none() {
             self.cluster.remove_pod(pod);
             return;
@@ -369,6 +420,22 @@ impl Simulation {
         }
     }
 
+    fn remove_drained_nodes(&mut self) {
+        let drained: Vec<NodeId> = self
+            .cluster
+            .node_ids()
+            .iter()
+            .copied()
+            .filter(|&node| {
+                self.cluster.node_phase(node) == Some(NodePhase::Draining)
+                    && self.cluster.node_pod_ids(node).is_empty()
+            })
+            .collect();
+        for node in drained {
+            self.cluster.remove_node(node);
+        }
+    }
+
     fn mark_node_ready(&mut self, node: NodeId) {
         if self.cluster.node_phase(node) == Some(NodePhase::Provisioning) {
             self.cluster.set_node_phase(node, NodePhase::Ready);
@@ -389,17 +456,18 @@ impl Simulation {
         }
     }
 
-    fn evaluate_services(&mut self) -> Vec<ServiceSignals> {
-        (0..self.cluster.service_count())
-            .map(|index| {
-                let service = ServiceId(index_to_id(index));
-                let signals = self.evaluate_service(service);
-                if signals.oom {
-                    self.restart_running_pods(service);
-                }
-                signals
-            })
-            .collect()
+    fn evaluate_services(&mut self) {
+        let mut signals = std::mem::take(&mut self.signals);
+        signals.clear();
+        for index in 0..self.cluster.service_count() {
+            let service = ServiceId(index_to_id(index));
+            let evaluated = self.evaluate_service(service);
+            if evaluated.oom {
+                self.restart_running_pods(service);
+            }
+            signals.push(evaluated);
+        }
+        self.signals = signals;
     }
 
     fn evaluate_service(&self, service: ServiceId) -> ServiceSignals {
@@ -431,54 +499,77 @@ impl Simulation {
     }
 
     fn publish_observation(&mut self) {
-        self.observation = Observation {
-            now: self.now,
-            services: self.observe_services(),
-            pools: self.observe_pools(),
-            ..Observation::default()
-        };
+        let mut observation = std::mem::take(&mut self.observation);
+        observation.now = self.now;
+        self.observe_services(&mut observation.services);
+        self.observe_pools(&mut observation.pools);
+        self.observe_nodes(&mut observation);
+        self.observation = observation;
     }
 
-    fn observe_services(&self) -> Vec<ServiceObservation> {
+    fn observe_services(&self, out: &mut Vec<ServiceObservation>) {
         let signals = self.metrics.published();
-        (0..self.cluster.service_count())
-            .map(|index| {
-                let service = ServiceId(index_to_id(index));
-                ServiceObservation {
-                    desired: self.desired[index],
-                    ready: self.cluster.count_pods(service, PodPhase::Running),
-                    pending: self.cluster.count_pods(service, PodPhase::Pending)
-                        + self.cluster.count_pods(service, PodPhase::Starting),
-                    unschedulable: self.count_unschedulable(service),
-                    requests: self.cluster.service_spec(service).requests,
-                    signals: signals[index],
-                    ..ServiceObservation::default()
-                }
-            })
-            .collect()
+        out.clear();
+        out.extend((0..self.cluster.service_count()).map(|index| {
+            let service = ServiceId(index_to_id(index));
+            let spec = self.cluster.service_spec(service);
+            ServiceObservation {
+                desired: self.desired[index],
+                ready: self.cluster.count_pods(service, PodPhase::Running),
+                pending: self.cluster.count_pods(service, PodPhase::Pending)
+                    + self.cluster.count_pods(service, PodPhase::Starting),
+                unschedulable: self.cluster.count_unschedulable(service),
+                outdated: self.cluster.count_outdated(service),
+                requests: spec.requests,
+                limits: spec.limits,
+                signals: signals[index],
+            }
+        }));
     }
 
-    fn count_unschedulable(&self, service: ServiceId) -> u32 {
-        let count = self
-            .cluster
-            .pods_of(service)
-            .into_iter()
-            .filter_map(|pod| self.cluster.pod(pod))
-            .filter(|view| view.unschedulable)
-            .count();
-        index_to_id(count)
+    fn observe_pools(&self, out: &mut Vec<PoolObservation>) {
+        out.clear();
+        out.extend((0..self.cluster.pool_count()).map(|index| {
+            let pool = PoolId(index_to_id(index));
+            let spec = self.cluster.pool_spec(pool);
+            PoolObservation {
+                ready: self.cluster.count_nodes(pool, NodePhase::Ready),
+                provisioning: self.cluster.count_nodes(pool, NodePhase::Provisioning),
+                draining: self.cluster.count_nodes(pool, NodePhase::Draining),
+                allocatable: spec.allocatable,
+                min_nodes: spec.min_nodes,
+                max_nodes: spec.max_nodes,
+            }
+        }));
     }
 
-    fn observe_pools(&self) -> Vec<PoolObservation> {
-        (0..self.cluster.pool_count())
-            .map(|index| {
-                let pool = PoolId(index_to_id(index));
-                PoolObservation {
-                    ready: self.cluster.count_nodes(pool, NodePhase::Ready),
-                    provisioning: self.cluster.count_nodes(pool, NodePhase::Provisioning),
-                    ..PoolObservation::default()
-                }
-            })
-            .collect()
+    fn observe_nodes(&self, observation: &mut Observation) {
+        observation.nodes.clear();
+        observation.node_pods.clear();
+        for &node in self.cluster.node_ids() {
+            let first_pod = observation.node_pods.len();
+            let mut requested = Resources::ZERO;
+            for view in self
+                .cluster
+                .node_pod_ids(node)
+                .iter()
+                .filter_map(|&pod| self.cluster.pod(pod))
+                .filter(|view| view.phase != PodPhase::Terminating)
+            {
+                requested = requested.saturating_add(view.requests);
+                observation.node_pods.push(PodPlacement {
+                    service: view.service,
+                    requests: view.requests,
+                });
+            }
+            observation.nodes.push(NodeObservation {
+                id: node,
+                pool: self.cluster.node_pool(node),
+                phase: self.cluster.node_phase(node).unwrap_or(NodePhase::Ready),
+                allocatable: self.cluster.node_allocatable(node),
+                requested,
+                pods: first_pod..observation.node_pods.len(),
+            });
+        }
     }
 }

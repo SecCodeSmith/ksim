@@ -87,7 +87,8 @@ fn step_throughput_stays_high_after_long_churn() {
     let elapsed = start.elapsed();
 
     let steps = 20_000_u64;
-    let steps_per_second = f64::from(u32::try_from(steps).expect("steps fits in u32")) / elapsed.as_secs_f64();
+    let steps_per_second =
+        f64::from(u32::try_from(steps).expect("steps fits in u32")) / elapsed.as_secs_f64();
 
     eprintln!("Throughput: {steps_per_second:.1} steps/s");
     assert!(

@@ -69,8 +69,9 @@ impl Scheduler {
     #[must_use]
     pub fn select_node(&self, cluster: &Cluster, requests: Resources) -> Option<NodeId> {
         cluster
-            .nodes()
-            .into_iter()
+            .node_ids()
+            .iter()
+            .copied()
             .filter(|&node| cluster.node_phase(node) == Some(NodePhase::Ready))
             .filter_map(|node| {
                 self.score_if_fits(cluster, node, requests)

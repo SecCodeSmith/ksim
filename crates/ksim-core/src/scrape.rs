@@ -20,12 +20,19 @@ impl MetricsPipeline {
         }
     }
 
-    pub(crate) fn scrape(&mut self, now: SimTime, signals: Vec<ServiceSignals>) {
+    pub(crate) fn scrape(&mut self, now: SimTime, signals: &[ServiceSignals]) {
         if !self.is_scrape_time(now) {
             return;
         }
         let retained = self.lag() + 1;
-        self.history.push_back(signals);
+        let mut snapshot = if self.history.len() >= retained {
+            self.history.pop_front().unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+        snapshot.clear();
+        snapshot.extend_from_slice(signals);
+        self.history.push_back(snapshot);
         while self.history.len() > retained {
             self.history.pop_front();
         }

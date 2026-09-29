@@ -77,8 +77,8 @@ fn alternating_replicas(tick: u64) -> Actions {
     }
 }
 
-/// Pod ids are never reused, so cost grows with history; a fresh simulation per batch keeps the
-/// measurement on a bounded window of steps.
+/// Every service flips between 6 and 3 replicas each step, the worst-case churn; a fresh
+/// simulation per batch keeps batches independent.
 fn step(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("step_50_services_20_nodes");
     group.throughput(Throughput::Elements(STEPS_PER_BATCH));
