@@ -41,7 +41,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
       id-token: write
     uses: ./.github/workflows/nightly-images.yml
     with:

@@ -5,7 +5,6 @@ on:
 permissions:
   contents: read
   packages: write
-  security-events: write
   id-token: write
 jobs:
   prep:
@@ -34,7 +33,7 @@ jobs:
     uses: ./.github/workflows/_scan-image.yml
     with:
       image: ${{ needs.prep.outputs.namespace }}/${{ matrix.name }}:${{ needs.prep.outputs.version }}
-      category: trivy-release-${{ matrix.name }}
+      report: trivy-release-${{ matrix.name }}
   sign:
     needs: [prep, scan]
     strategy:

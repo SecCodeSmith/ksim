@@ -48,8 +48,7 @@ jobs:
     permissions:
       contents: read
       packages: read
-      security-events: write
     uses: ./.github/workflows/_scan-image.yml
     with:
       input: image-${{ matrix.engine }}-${{ matrix.target }}
-      category: trivy-${{ matrix.engine }}-${{ matrix.target }}
+      report: trivy-${{ matrix.engine }}-${{ matrix.target }}

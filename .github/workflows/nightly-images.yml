@@ -14,7 +14,6 @@ on:
 permissions:
   contents: read
   packages: write
-  security-events: write
   id-token: write
 jobs:
   prep:
@@ -43,7 +42,7 @@ jobs:
     uses: ./.github/workflows/_scan-image.yml
     with:
       image: ${{ needs.prep.outputs.namespace }}/${{ matrix.name }}:${{ needs.prep.outputs.version }}
-      category: trivy-${{ matrix.name }}-${{ inputs.branch }}
+      report: trivy-${{ matrix.name }}-${{ needs.prep.outputs.version }}
   sign:
     needs: [prep, scan]
     strategy: {fail-fast: false, matrix: {name: [ksim, ksim-train]}}

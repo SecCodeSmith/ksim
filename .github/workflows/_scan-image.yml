@@ -10,13 +10,13 @@ on:
         description: Artifact name holding image.tar to scan
         type: string
         default: ''
-      category:
+      report:
+        description: Artifact name for the SARIF report
         type: string
         required: true
 permissions:
   contents: read
   packages: read
-  security-events: write
 jobs:
   scan:
     runs-on: ubuntu-24.04
@@ -38,7 +38,7 @@ jobs:
           format: sarif
           output: trivy.sarif
       - if: always() && hashFiles('trivy.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4.38.2
+        uses: actions/upload-artifact@v7.0.1
         with:
-          sarif_file: trivy.sarif
-          category: ${{ inputs.category }}
+          name: ${{ inputs.report }}
+          path: trivy.sarif

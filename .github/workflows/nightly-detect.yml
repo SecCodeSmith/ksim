@@ -33,7 +33,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-      security-events: write
       id-token: write
     uses: ./.github/workflows/_nightly-pipeline.yml
     with:
