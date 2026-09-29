@@ -16,8 +16,9 @@ Tags: `nightly`, `nightly-YYYYMMDD`, `X.Y.Z`, `latest`. Images carry OCI labels,
 One multi-stage `Containerfile` (also available as `Dockerfile`): a Rust builder stage on the pinned latest stable `rust` image, then a distroless or `debian-slim` runtime; a second target `ksim-train`.
 
 ```sh
-docker build --target ksim -t ksim .
-podman build --target ksim -t ksim .
+docker build --target runtime -t ksim .
+podman build --target runtime -t ksim .
+podman build --target train -t ksim-train .
 ```
 
 ## Run
