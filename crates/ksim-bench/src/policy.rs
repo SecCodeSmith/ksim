@@ -63,7 +63,9 @@ impl Policy {
     /// oracle looks ahead by two ticks plus the default pod startup maximum (5 s), because a
     /// replica change made at `t` is scheduled at `t + tick`, runs after the startup latency and
     /// is first observed at `t + 2 * tick`; the target
-    /// utilisation of reference policies is each service's HPA target.
+    /// utilisation of reference policies is each service's HPA target. Reference policies only
+    /// choose replicas; like `K8s`, they run with the Cluster Autoscaler so their pods get
+    /// nodes, which keeps the comparison about replica decisions alone.
     #[must_use]
     pub fn build(self, scenario: &Scenario, seed: u64) -> Box<dyn Autoscaler> {
         match self {

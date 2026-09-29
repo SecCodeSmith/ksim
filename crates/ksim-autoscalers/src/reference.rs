@@ -1,3 +1,4 @@
+use crate::traits::ReplicaRecommender;
 use ksim_core::{
     actions::Actions,
     autoscaler::Autoscaler,
@@ -195,5 +196,19 @@ impl Autoscaler for Oracle {
             replicas,
             ..Actions::none()
         }
+    }
+}
+
+impl ReplicaRecommender for StaticReplicas {
+    fn recommend_replicas(&mut self, observation: &Observation) -> Vec<Option<u32>> {
+        let _ = observation;
+        todo!()
+    }
+}
+
+impl ReplicaRecommender for Oracle {
+    fn recommend_replicas(&mut self, observation: &Observation) -> Vec<Option<u32>> {
+        let _ = observation;
+        todo!()
     }
 }
