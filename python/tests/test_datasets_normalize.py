@@ -180,9 +180,9 @@ class TestTopServices:
     def test_top_services_picks_by_total_cpu(self):
         """Services are picked by total CPU, descending."""
         series = [
-            __mock_series("low", cpu=[50.0, 50.0]),  # total 100
-            __mock_series("high", cpu=[100.0, 100.0]),  # total 200
-            __mock_series("mid", cpu=[70.0, 80.0]),  # total 150
+            _mock_series("low", cpu=[50.0, 50.0]),  # total 100
+            _mock_series("high", cpu=[100.0, 100.0]),  # total 200
+            _mock_series("mid", cpu=[70.0, 80.0]),  # total 150
         ]
         result = top_services(series, 2)
         assert len(result) == 2
@@ -192,8 +192,8 @@ class TestTopServices:
     def test_top_services_ties_by_name(self):
         """Ties are broken by name."""
         series = [
-            __mock_series("z", cpu=[100.0, 100.0]),  # total 200
-            __mock_series("a", cpu=[100.0, 100.0]),  # total 200
+            _mock_series("z", cpu=[100.0, 100.0]),  # total 200
+            _mock_series("a", cpu=[100.0, 100.0]),  # total 200
         ]
         result = top_services(series, 2)
         assert result[0].name == "a"
@@ -202,16 +202,16 @@ class TestTopServices:
     def test_top_services_count_smaller_than_list(self):
         """Count smaller than list length returns count items."""
         series = [
-            __mock_series("a", cpu=[100.0]),
-            __mock_series("b", cpu=[200.0]),
-            __mock_series("c", cpu=[50.0]),
+            _mock_series("a", cpu=[100.0]),
+            _mock_series("b", cpu=[200.0]),
+            _mock_series("c", cpu=[50.0]),
         ]
         result = top_services(series, 2)
         assert len(result) == 2
 
     def test_top_services_count_greater_than_list(self):
         """Count greater than list length returns all items."""
-        series = [__mock_series("a", cpu=[100.0])]
+        series = [_mock_series("a", cpu=[100.0])]
         result = top_services(series, 10)
         assert len(result) == 1
 
@@ -248,7 +248,7 @@ class TestSplitsStructure:
             assert val.end_s <= test.start_s
 
 
-def __mock_series(name: str, cpu: list[float]):
+def _mock_series(name: str, cpu: list[float]):
     """Helper to create a ServiceSeries with given CPU values."""
     return ServiceSeries(
         name=name,

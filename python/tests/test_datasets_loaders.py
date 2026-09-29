@@ -38,7 +38,7 @@ class TestAlibaba2018:
         usage_path.write_text("c1,m1,0,50,40,0,0,0,0,0,0\n")
 
         result = alibaba2018.load(meta_path, usage_path)
-        assert result[0]["cpu_millis"] == 2000.0
+        assert result["cpu_millis"][0] == 2000.0
 
     def test_alibaba2018_memory_computation(self, tmp_path):
         """memory = mem_util/100 * mem_size * 2**30."""
@@ -51,7 +51,7 @@ class TestAlibaba2018:
 
         result = alibaba2018.load(meta_path, usage_path)
         expected_mem = 0.4 * 50 * (2**30)
-        assert result[0]["memory_bytes"] == pytest.approx(expected_mem)
+        assert result["memory_bytes"][0] == pytest.approx(expected_mem)
 
     def test_alibaba2018_request_rate_from_cpu(self, tmp_path):
         """request_rate = cpu_millis / 50."""
@@ -63,7 +63,7 @@ class TestAlibaba2018:
 
         result = alibaba2018.load(meta_path, usage_path)
         # cpu = 2000, rate = 2000 / 50 = 40
-        assert result[0]["request_rate"] == 40.0
+        assert result["request_rate"][0] == 40.0
 
     def test_alibaba2018_drops_util_over_100(self, tmp_path):
         """Utilization > 100 is dropped."""
@@ -130,7 +130,7 @@ class TestAlibaba2021:
         )
 
         result = alibaba2021.load([ms_resource], [ms_rt_qps])
-        assert result[0]["time_s"] == 5.0
+        assert result["time_s"][0] == 5.0
 
     def test_alibaba2021_cpu_millis(self, tmp_path):
         """cpu_millis = cpu_utilization * container_cpu_millis."""
@@ -147,7 +147,7 @@ class TestAlibaba2021:
 
         result = alibaba2021.load([ms_resource], [ms_rt_qps])
         # cpu = 0.5 * 1000 = 500
-        assert result[0]["cpu_millis"] == 500.0
+        assert result["cpu_millis"][0] == 500.0
 
     def test_alibaba2021_rate_from_metrics(self, tmp_path):
         """request_rate = sum of providerRPC_MCR and HTTP_MCR."""
@@ -165,7 +165,7 @@ class TestAlibaba2021:
         )
 
         result = alibaba2021.load([ms_resource], [ms_rt_qps])
-        assert result[0]["request_rate"] == 150.0
+        assert result["request_rate"][0] == 150.0
 
     def test_alibaba2021_rate_zero_when_absent(self, tmp_path):
         """request_rate = 0 when no rate metrics."""
@@ -181,7 +181,7 @@ class TestAlibaba2021:
         )
 
         result = alibaba2021.load([ms_resource], [ms_rt_qps])
-        assert result[0]["request_rate"] == 0.0
+        assert result["request_rate"][0] == 0.0
 
 
 class TestAzure2019:
@@ -245,7 +245,7 @@ class TestAzure2019:
 
         result = azure2019.load_day(1, invocations, durations, memory)
         # rate = 120 / 60 = 2
-        assert result[0]["request_rate"] == 2.0
+        assert result["request_rate"][0] == 2.0
 
     def test_azure2019_cpu_from_rate_and_duration(self, tmp_path):
         """cpu_millis = request_rate * Average."""
@@ -262,7 +262,7 @@ class TestAzure2019:
 
         result = azure2019.load_day(1, invocations, durations, memory)
         # rate = 2, duration = 100 → cpu = 2 * 100 = 200
-        assert result[0]["cpu_millis"] == 200.0
+        assert result["cpu_millis"][0] == 200.0
 
     def test_azure2019_memory_computation(self, tmp_path):
         """memory_bytes = AverageAllocatedMb * 2**20."""
@@ -279,7 +279,7 @@ class TestAzure2019:
 
         result = azure2019.load_day(1, invocations, durations, memory)
         expected = 256 * (2**20)
-        assert result[0]["memory_bytes"] == expected
+        assert result["memory_bytes"][0] == expected
 
     def test_azure2019_memory_none_is_zero(self, tmp_path):
         """memory_bytes = 0 when memory data missing."""
@@ -293,7 +293,7 @@ class TestAzure2019:
         )
 
         result = azure2019.load_day(1, invocations, durations, None)
-        assert result[0]["memory_bytes"] == 0.0
+        assert result["memory_bytes"][0] == 0.0
 
     def test_azure2019_day_2_offset(self, tmp_path):
         """Day 2 offsets by 86400."""
@@ -309,7 +309,7 @@ class TestAzure2019:
         memory.write_text("HashOwner,HashApp,SampleCount,AverageAllocatedMb\no1,app1,100,256\n")
 
         result = azure2019.load_day(2, invocations, durations, memory)
-        assert result[0]["time_s"] == 86400.0
+        assert result["time_s"][0] == 86400.0
 
 
 class TestBorg2019:
@@ -343,7 +343,7 @@ class TestBorg2019:
         )
 
         result = borg2019.load([usage])
-        assert result[0]["time_s"] == 1.0
+        assert result["time_s"][0] == 1.0
 
     def test_borg2019_cpu_millis(self, tmp_path):
         """cpu_millis = average_usage_cpus * cpu_millis_per_unit."""
@@ -355,7 +355,7 @@ class TestBorg2019:
 
         result = borg2019.load([usage])
         # cpu = 0.5 * 1000 = 500
-        assert result[0]["cpu_millis"] == 500.0
+        assert result["cpu_millis"][0] == 500.0
 
     def test_borg2019_memory_millis(self, tmp_path):
         """memory_bytes = average_usage_memory * memory_bytes_per_unit."""
@@ -367,7 +367,7 @@ class TestBorg2019:
 
         result = borg2019.load([usage])
         expected = 0.4 * (2**30)
-        assert result[0]["memory_bytes"] == pytest.approx(expected)
+        assert result["memory_bytes"][0] == pytest.approx(expected)
 
     def test_borg2019_request_rate_from_cpu(self, tmp_path):
         """request_rate = cpu_millis / cpu_millis_per_request."""
@@ -379,4 +379,4 @@ class TestBorg2019:
 
         result = borg2019.load([usage])
         # cpu = 500, rate = 500 / 50 = 10
-        assert result[0]["request_rate"] == 10.0
+        assert result["request_rate"][0] == 10.0

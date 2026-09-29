@@ -95,7 +95,7 @@ class TestEncode:
         ]
         result = encode(15, series)
         assert result.startswith(b"KSIMTRC1")
-        header = struct.unpack("<IIIIQQQ", result[8:56])
+        header = struct.unpack("<IIIIQQQ", result[8:48])
         assert header[0] == 1  # version
         assert header[1] == 15  # tick
         assert header[2] == 2  # num_services
