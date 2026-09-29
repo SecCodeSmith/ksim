@@ -1,0 +1,114 @@
+name = "synthetic_flash_crowd"
+duration_s = 14400
+tick_s = 15
+
+[slo]
+latency_ms = 200.0
+percentile = "P95"
+max_error_rate = 0.01
+availability_target = 0.999
+
+[[pools]]
+name = "standard"
+cpu_millis = 4000
+memory_mib = 16384
+min_nodes = 1
+max_nodes = 25
+initial_nodes = 5
+price_per_hour = 0.25
+
+[[pools]]
+name = "highmem"
+cpu_millis = 2000
+memory_mib = 32768
+min_nodes = 0
+max_nodes = 15
+initial_nodes = 2
+price_per_hour = 0.45
+
+[[services]]
+name = "api"
+requests_cpu_millis = 500
+requests_memory_mib = 512
+limits_cpu_millis = 1000
+limits_memory_mib = 1024
+initial_replicas = 8
+cpu_millis_per_request = 40.0
+memory_base_mib = 200.0
+memory_mib_per_rps = 0.1
+
+[services.curve]
+kind = "flash_crowd"
+base = 50.0
+peak = 300.0
+start_s = 3600
+decay_s = 1800
+
+[services.performance]
+kind = "queueing"
+cpu_millis_per_request = 40.0
+timeout_ms = 15000.0
+ca2 = 1.2
+cs2 = 0.8
+
+[services.hpa]
+min_replicas = 5
+max_replicas = 150
+target_cpu_utilization = 0.7
+
+[[services]]
+name = "worker"
+requests_cpu_millis = 1000
+requests_memory_mib = 1024
+limits_cpu_millis = 2000
+limits_memory_mib = 2048
+initial_replicas = 4
+cpu_millis_per_request = 200.0
+memory_base_mib = 512.0
+memory_mib_per_rps = 0.5
+
+[services.curve]
+kind = "flash_crowd"
+base = 25.0
+peak = 150.0
+start_s = 5400
+decay_s = 2400
+
+[services.performance]
+kind = "queueing"
+cpu_millis_per_request = 200.0
+timeout_ms = 30000.0
+ca2 = 1.5
+cs2 = 1.0
+
+[services.hpa]
+min_replicas = 2
+max_replicas = 75
+target_cpu_utilization = 0.65
+
+[[services]]
+name = "cache"
+requests_cpu_millis = 250
+requests_memory_mib = 256
+limits_cpu_millis = 500
+limits_memory_mib = 512
+initial_replicas = 2
+cpu_millis_per_request = 10.0
+memory_base_mib = 100.0
+memory_mib_per_rps = 0.05
+
+[services.curve]
+kind = "flash_crowd"
+base = 100.0
+peak = 500.0
+start_s = 4500
+decay_s = 3600
+
+[services.performance]
+kind = "utilization"
+base_latency_ms = 5.0
+
+[services.hpa]
+min_replicas = 1
+max_replicas = 50
+target_cpu_utilization = 0.8
