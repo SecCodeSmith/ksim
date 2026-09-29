@@ -41,7 +41,7 @@ fn evaluate_returns_all_metrics_keyed_by_name() {
     assert!(!result.is_empty());
     for (key, value) in &result {
         assert!(!key.is_empty());
-        assert!(value.is_finite() || value.is_nan());
+        assert!(!value.is_nan(), "{key} is NaN");
     }
 }
 
