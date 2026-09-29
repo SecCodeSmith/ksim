@@ -15,7 +15,12 @@ rand_chacha.workspace = true
 
 [dev-dependencies]
 approx.workspace = true
+criterion.workspace = true
 proptest.workspace = true
 
 [features]
 contract-tests = []
+
+[[bench]]
+name = "step"
+harness = false

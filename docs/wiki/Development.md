@@ -4,11 +4,23 @@
 
 TDD is always test first: red, green, refactor.
 
-1. Red: write a failing test that demands the behavior; confirm it fails for the right reason.
-2. Green: write the minimum production code that passes.
+0. API contract first (Rust): the orchestrator commits public signatures with `todo!()` bodies so tests compile and fail at runtime, not at compile time.
+1. Red: the test-writer (Haiku) writes failing tests against that contract; confirm they fail for the right reason.
+2. Green: the implementer (Sonnet) fills the bodies with the minimum code that passes.
 3. Refactor with tests green.
 
+Tests are changed only by separate `test:` commits with a written justification; the implementer never edits them.
+
 Git history shows `test:` commits before the implementation commits for each feature. Baselines start from tests ported from upstream Kubernetes; metrics from hand-computed examples in the papers. CI gates on test failure and coverage regression (target 90 % for core, autoscalers, metrics).
+
+## Contract tests
+
+Shared suites are `#[macro_export]` macros in `ksim-core::contract`, compiled with the `contract-tests` feature (the implementation crates turn it on in their dev-dependency on `ksim-core`) (`workload_source_contract_tests!`, one per trait). Each implementation crate instantiates the macro with a constructor, so every implementation is held to the same behavior.
+
+```sh
+cargo test -p ksim-workload
+cargo bench -p ksim-core --bench step -- --quick   # engine step benchmark
+```
 
 ## SOLID mapped to traits
 

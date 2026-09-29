@@ -11,7 +11,7 @@ use ksim_core::{
     workload::{ServiceDemand, WorkloadSource},
 };
 
-/// 64-bit golden-ratio constant (SplitMix64) decorrelating adjacent timestamps.
+/// 64-bit golden-ratio constant (`SplitMix64`) decorrelating adjacent timestamps.
 const GOLDEN_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
 
 /// Request rate (requests per second) as a pure function of time.

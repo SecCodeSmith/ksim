@@ -157,6 +157,16 @@ impl SimulationBuilder {
     }
 }
 
+/// Discrete-time cluster simulation. Each [`Simulation::step`] runs, in order:
+///
+/// 1. apply actions: requests first (so pods created by the same step get the new requests),
+///    then replica changes, then node pool deltas;
+/// 2. advance the clock by one tick and apply due events (node ready, pod running, pod removed);
+/// 3. schedule pending pods;
+/// 4. evaluate the performance model per service, restarting running pods of a service reporting out-of-memory
+///    with kubelet crash-loop backoff;
+/// 5. scrape metrics on the resolution grid (consumers see the lagged snapshot);
+/// 6. publish the observation.
 #[derive(Debug)]
 pub struct Simulation {
     cluster: Cluster,

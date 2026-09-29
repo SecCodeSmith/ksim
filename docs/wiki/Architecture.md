@@ -1,12 +1,12 @@
 # Architecture
 
-## Crates (Implemented as skeleton; behavior Planned)
+## Crates
 
 | Crate | Responsibility | Status |
 |---|---|---|
-| `ksim-core` | cluster state machine, clock, event queue, scheduler | skeleton |
-| `ksim-workload` | `.ksimtrace` format, mmap reader, replay, time-warp/scale | skeleton |
-| `ksim-perf` | performance model: latency, throttling, OOM | skeleton |
+| `ksim-core` | cluster state machine, clock, event queue, scheduler, lifecycle, scrape pipeline; owns the extension traits | Implemented (Milestone 2) |
+| `ksim-workload` | synthetic demand curves (Implemented, Milestone 2); `.ksimtrace` format, mmap reader, replay, time-warp/scale (Planned) | partial |
+| `ksim-perf` | queueing (Erlang C, Allen-Cunneen) and utilisation performance models | Implemented (Milestone 2) |
 | `ksim-autoscalers` | `Autoscaler` trait, HPA, VPA, CA baselines | skeleton |
 | `ksim-metrics` | benchmark metrics and reports | skeleton |
 | `ksim-bench` | CLI: scenarios (TOML) to results (JSON/CSV) | `--version` only |
@@ -15,7 +15,11 @@
 
 Python lives in `python/ksim/` (datasets, gym wrappers, analysis) and stays out of the step loop.
 
-## Data flow (Planned)
+## Dependency direction
+
+`ksim-core` owns the traits (`WorkloadSource`, `PerformanceModel`, `LatencyModel`, `ScoringPolicy`) and depends on no other workspace crate. `ksim-workload` and `ksim-perf` depend on `ksim-core` and implement its traits; they never depend on each other. Core tests and benches use in-file fakes.
+
+## Data flow (trace replay and autoscalers Planned)
 
 ```
 trace (Alibaba / Borg / Azure)
@@ -30,9 +34,10 @@ trace (Alibaba / Borg / Azure)
 ## Traits and SOLID boundaries
 
 - `Autoscaler::act(&mut self, obs: &Observation, now: SimTime) -> Actions`: baselines and RL agents share this path.
-- `TraceSource`, `PerformanceModel`, `RewardFn`, `Metric`, `SchedulerPlugin`: extension points.
+- `WorkloadSource` (a `TraceSource`), `PerformanceModel`, `RewardFn`, `Metric`, `SchedulerPlugin`: extension points.
 - Small interfaces: `ReplicaRecommender` (HPA), `ResourceRecommender` (VPA), `NodeProvisioner` (CA).
 - The engine depends only on traits, injected through `SimulationBuilder`; tests inject fakes.
+- Contract test macros live in `ksim-core` behind the `contract-tests` feature (e.g. `workload_source_contract_tests!`).
 - Every implementation of a trait must pass a shared contract test suite (e.g. `autoscaler_contract_tests!`), which enforces Liskov substitutability.
 
 The workspace forbids `unsafe_code` by default and enables selected `clippy::pedantic` lints.
