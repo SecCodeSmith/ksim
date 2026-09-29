@@ -1,0 +1,56 @@
+name: _coverage
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ''
+      threshold:
+        type: number
+        default: 90
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+permissions:
+  contents: read
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/setup-rust-python
+      - uses: taiki-e/install-action@v2.87.22
+        with:
+          tool: cargo-llvm-cov,cargo-nextest
+      - run: >-
+          cargo llvm-cov nextest --workspace --exclude ksim-py
+          --lcov --output-path lcov.info
+          --fail-under-lines ${{ inputs.threshold }}
+      - run: uv run --no-sync maturin develop
+      - run: >-
+          uv run --no-sync pytest --cov=ksim --cov=ksim_ci
+          --cov-report=xml --cov-fail-under=${{ inputs.threshold }}
+      - if: always()
+        run: |
+          {
+            echo '### Rust coverage'
+            cargo llvm-cov report --summary-only || true
+            echo '### Python coverage'
+            uv run --no-sync coverage report --format=markdown || true
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: codecov/codecov-action@v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info,coverage.xml
+          fail_ci_if_error: false
+      - if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: coverage-lcov
+          path: |
+            lcov.info
+            coverage.xml
+          if-no-files-found: ignore

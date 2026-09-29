@@ -1,0 +1,14 @@
+name: test
+on:
+  push:
+  pull_request:
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  rust:
+    uses: ./.github/workflows/_rust-test.yml
+  python:
+    uses: ./.github/workflows/_python-test.yml

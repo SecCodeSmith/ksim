@@ -1,0 +1,46 @@
+name: release-images
+on:
+  push:
+    tags: ['v*', '!v*-nightly.*']
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
+jobs:
+  prep:
+    uses: ./.github/workflows/_image-tags.yml
+  build:
+    needs: prep
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {target: runtime, name: ksim}
+          - {target: train, name: ksim-train}
+    uses: ./.github/workflows/_build-image-docker.yml
+    with:
+      image: ${{ needs.prep.outputs.namespace }}/${{ matrix.name }}
+      target: ${{ matrix.target }}
+      push: true
+      tags: ${{ needs.prep.outputs.tags }}
+      platforms: linux/amd64,linux/arm64
+  scan:
+    needs: [prep, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [ksim, ksim-train]
+    uses: ./.github/workflows/_scan-image.yml
+    with:
+      image: ${{ needs.prep.outputs.namespace }}/${{ matrix.name }}:${{ needs.prep.outputs.version }}
+      category: trivy-release-${{ matrix.name }}
+  sign:
+    needs: [prep, scan]
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [ksim, ksim-train]
+    uses: ./.github/workflows/_sign-image.yml
+    with:
+      ref: ${{ needs.prep.outputs.namespace }}/${{ matrix.name }}:${{ needs.prep.outputs.version }}

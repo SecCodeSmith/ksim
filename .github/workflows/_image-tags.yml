@@ -1,0 +1,53 @@
+name: _image-tags
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: Branch to tag as nightly or release line; empty means the pushed v* tag
+        type: string
+        default: ''
+    outputs:
+      namespace:
+        value: ${{ jobs.tags.outputs.namespace }}
+      version:
+        value: ${{ jobs.tags.outputs.version }}
+      tags:
+        value: ${{ jobs.tags.outputs.tags }}
+permissions:
+  contents: read
+jobs:
+  tags:
+    runs-on: ubuntu-24.04
+    outputs:
+      namespace: ${{ steps.meta.outputs.namespace }}
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - if: inputs.branch != ''
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.branch }}
+      - id: meta
+        env:
+          BRANCH: ${{ inputs.branch }}
+          TAG: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          if [ -z "$BRANCH" ]; then
+            version="${TAG#v}"
+            tags="$version"$'\n'"$(cut -d. -f1,2 <<< "$version")"$'\n'latest
+          else
+            version="$(sed -n '/^\[workspace.package\]/,/^\[/{s/^version *= *"\(.*\)"/\1/p}' Cargo.toml)"
+            if [ "$BRANCH" = main ]; then
+              tags="nightly"$'\n'"nightly-$(date -u +%Y%m%d)"$'\n'"$version"
+            else
+              tags="$version"$'\n'"$(cut -d. -f1,2 <<< "$version")"
+            fi
+          fi
+          {
+            echo "namespace=ghcr.io/${OWNER,,}"
+            echo "version=$version"
+            echo 'tags<<EOF'
+            echo "$tags"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"

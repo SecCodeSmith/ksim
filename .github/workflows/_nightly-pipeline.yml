@@ -1,0 +1,48 @@
+name: _nightly-pipeline
+on:
+  workflow_call:
+    inputs:
+      branches:
+        description: JSON array of branch names to run test, bump, build and images for
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  test-rust:
+    strategy: {fail-fast: false, matrix: {branch: "${{ fromJSON(inputs.branches) }}"}}
+    uses: ./.github/workflows/_rust-test.yml
+    with:
+      ref: ${{ matrix.branch }}
+  test-python:
+    strategy: {fail-fast: false, matrix: {branch: "${{ fromJSON(inputs.branches) }}"}}
+    uses: ./.github/workflows/_python-test.yml
+    with:
+      ref: ${{ matrix.branch }}
+  bump:
+    needs: [test-rust, test-python]
+    strategy: {fail-fast: false, max-parallel: 1, matrix: {branch: "${{ fromJSON(inputs.branches) }}"}}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/nightly-bump.yml
+    with:
+      branch: ${{ matrix.branch }}
+  build:
+    needs: bump
+    strategy: {fail-fast: false, matrix: {branch: "${{ fromJSON(inputs.branches) }}"}}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/nightly-build.yml
+    with:
+      branch: ${{ matrix.branch }}
+  images:
+    needs: bump
+    strategy: {fail-fast: false, matrix: {branch: "${{ fromJSON(inputs.branches) }}"}}
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+      id-token: write
+    uses: ./.github/workflows/nightly-images.yml
+    with:
+      branch: ${{ matrix.branch }}

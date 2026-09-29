@@ -1,0 +1,22 @@
+name: nightly-bump
+on:
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        required: true
+        default: main
+permissions:
+  contents: read
+jobs:
+  bump:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_bump-version.yml
+    with:
+      branch: ${{ inputs.branch }}

@@ -1,0 +1,47 @@
+name: nightly-build
+on:
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        required: true
+        default: main
+permissions:
+  contents: read
+jobs:
+  binaries:
+    uses: ./.github/workflows/_build-binaries.yml
+    with:
+      ref: ${{ inputs.branch }}
+  wheels:
+    uses: ./.github/workflows/_build-wheels.yml
+    with:
+      ref: ${{ inputs.branch }}
+  release:
+    needs: [binaries, wheels]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.branch }}
+      - id: version
+        run: |
+          version="$(sed -n '/^\[workspace.package\]/,/^\[/{s/^version *= *"\(.*\)"/\1/p}' Cargo.toml)"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v3.0.3
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          name: v${{ steps.version.outputs.value }}
+          prerelease: ${{ inputs.branch == 'main' }}
+          files: dist/*

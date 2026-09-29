@@ -1,0 +1,33 @@
+name: security-deps
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1'
+concurrency:
+  group: security-deps-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  cargo-deny:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@v2.1.1
+  cargo-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: rustup show
+      - uses: taiki-e/install-action@v2.87.22
+        with:
+          tool: cargo-audit
+      - run: cargo audit
+  pip-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv export --no-emit-project --all-extras --no-hashes -o requirements.txt
+      - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip

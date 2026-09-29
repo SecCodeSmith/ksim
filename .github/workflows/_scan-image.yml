@@ -1,0 +1,44 @@
+name: _scan-image
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Registry image reference to scan
+        type: string
+        default: ''
+      input:
+        description: Artifact name holding image.tar to scan
+        type: string
+        default: ''
+      category:
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: read
+  security-events: write
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    env:
+      TRIVY_USERNAME: ${{ github.actor }}
+      TRIVY_PASSWORD: ${{ github.token }}
+    steps:
+      - if: inputs.input != ''
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: ${{ inputs.input }}
+          path: scan
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ inputs.image }}
+          input: ${{ inputs.input != '' && 'scan/image.tar' || '' }}
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          format: sarif
+          output: trivy.sarif
+      - if: always() && hashFiles('trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4.38.2
+        with:
+          sarif_file: trivy.sarif
+          category: ${{ inputs.category }}
