@@ -16,8 +16,8 @@ Every wiki page marks content as **Implemented** (exists in the repository now) 
 | C ABI `ksim_version()` | Implemented |
 | CI helper `ksim_ci` (nightly version bumps) | Implemented |
 | GitHub Actions pipelines, Docker/Podman images on GHCR | Implemented |
-| Simulation core, perf model | Planned (Milestone 2) |
-| HPA / VPA / CA baselines | Planned (Milestone 3) |
+| Simulation core, perf model | Implemented (Milestone 2) |
+| HPA / VPA / CA baselines, `KubernetesStack` | Implemented (Milestone 3) |
 | Metrics and `ksim-bench run` | Planned (Milestone 4) |
 | Dataset normalizers, `.ksimtrace` | Planned (Milestone 5) |
 | Gymnasium env, vector env, PPO example | Planned (Milestone 6) |

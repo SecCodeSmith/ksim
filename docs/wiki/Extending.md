@@ -1,11 +1,20 @@
 # Extending
 
-Extension is done by implementing a trait; the engine is never edited (open/closed). Every walkthrough is test first. Status: trait set **Planned** (Milestones 2-4); the workflow applies from now on.
+Extension is done by implementing a trait; the engine is never edited (open/closed). Every walkthrough is test first. Status: autoscaler traits **Implemented** (Milestones 2-3); metric and dataset traits **Planned** (Milestones 4-5). The workflow applies from now on.
 
 ## Add an autoscaler
 
 1. Write the failing tests: a behavior test with a hand-computed expectation, and the shared contract suite (`autoscaler_contract_tests!(MyAutoscaler)`). Run them and see them fail.
-2. Implement `Autoscaler::act` minimally until green. Keep to the small traits you need (`ReplicaRecommender`, `ResourceRecommender`, `NodeProvisioner`).
+2. Implement the trait minimally until green. Two options:
+   - Full control: implement `ksim_core::autoscaler::Autoscaler` (`fn act(&mut self, observation: &Observation) -> Actions`) and use it directly in the step loop. This is the path for learned policies.
+   - One concern only: implement `ReplicaRecommender`, `ResourceRecommender` or `NodeProvisioner` (`ksim_autoscalers::traits`) and plug it into `KubernetesStack`, replacing or combining with the built-in baselines:
+
+```rust
+let stack = KubernetesStack::new()
+    .with_replicas(Box::new(MyReplicaPolicy::new()))
+    .with_nodes(Box::new(ClusterAutoscaler::new(Default::default())));
+```
+
 3. Refactor with tests green; register in the policy factory of `ksim-bench`.
 4. Document parameters and sources on [Baseline Autoscalers](Baseline-Autoscalers) or a new wiki page.
 

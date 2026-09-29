@@ -87,9 +87,19 @@ CPU usage is capped at `ready_pods * limits.cpu_millis`; the excess fraction is 
 
 | Date | Machine | Time per step | Steps/s |
 |---|---|---|---|
-| 2026-09-29 | CI container, single core | 1.29 ms | ~775 |
+| 2026-09-29 | CI container, single core | 1.29 ms | ~775 (before indexing) |
+| 2026-09-29 | CI container, single core | 48 µs | ~20.9k (heavy churn: every service flips 6↔3 replicas each step) |
 
-Known cost driver: pod and node ids are never reused and the cluster scans all slots ever created, so per-step time grows with history (a 1000-step run in one simulation measured well above the baseline). Slot reuse or per-service indexes are a future optimisation.
+Release-mode gate (`cargo test --release -p ksim-core --test perf -- --ignored`, run by the `perf` workflow): 50 services on 20 nodes, replicas cycling 3–8, measured after 20,000 warm-up steps; must stay at or above 20,000 steps/s. Measured 2026-09-29: ~355,000 steps/s.
+
+Per-step cost is proportional to live pods and nodes: pods are stored densely behind an id-to-slot table (ids stay stable and are never reused, so stale events resolve to `None`), with sorted per-service and per-node pod lists, cached per-node requested totals, per-service/phase and per-pool counters and a pending set; the observation and scrape buffers are reused across ticks.
+
+## Actions added in Milestone 3
+
+- `drain`: the node becomes `Draining` (unschedulable), its bound non-terminating pods are evicted (`Terminating`, removed after the termination latency) and recreated elsewhere by reconciliation; the node is removed after due events once nothing is bound. A drain is ignored unless the pool's ready plus provisioning nodes exceed `min_nodes`.
+- `evict[s]`: up to `n` outdated pods of service `s` (requests differing from the service's current requests), oldest first, ties to the lower id.
+- Every step reconciles each service to its desired count of non-terminating pods.
+- `Observation.nodes` / `node_pods` expose each node's pool, phase, allocatable, requested (bound non-terminating pods) and pod placements; `ServiceObservation.outdated` and `limits`; `PoolObservation` bounds and draining count.
 
 ## Assumptions and limitations
 

@@ -129,6 +129,10 @@ struct PoolOption {
 /// `Ready` nodes not removed in this loop. Empty removable nodes are drained in bulk (up to
 /// `max_empty_bulk_delete`, ascending id); otherwise one non-empty removable node (lowest
 /// utilisation, ties to the lowest id).
+///
+/// # Panics
+/// If a `NodeObservation::pods` range lies outside `Observation::node_pods`, which the engine
+/// never produces.
 #[derive(Debug)]
 pub struct ClusterAutoscaler {
     config: ClusterAutoscalerConfig,

@@ -71,22 +71,6 @@ pub struct Recommendation {
     pub upper_bound: Resources,
 }
 
-/// Vertical Pod Autoscaler (recommender + updater).
-///
-/// Recommender, every `recommender_interval`, for services with ready pods: adds the per-pod
-/// CPU usage (`cpu_usage_millis / ready`, weight `max(request cores, 0.1)`) to a decaying CPU
-/// histogram, and tracks the per-pod memory peak (`memory_usage_bytes / ready`) of the current
-/// aggregation interval in a decaying memory histogram (the current peak is replaced when
-/// exceeded). Each estimate is `percentile * (1 + safety_margin)`; with `c` = days of history
-/// (at least one recommender interval), the upper bound is multiplied by `1 + 1/c` and the
-/// lower bound by `(1 + 0.001/c)^-2`; all three are raised to the minimums and rounded up to
-/// whole millicores and bytes.
-///
-/// Updater, every `updater_interval`, in `Initial` or `Auto` mode: when the current requests
-/// fall outside `[lower_bound, upper_bound]` in CPU or memory, sets requests to `target`
-/// (new pods only). In `Auto` mode it also evicts outdated pods of services with at least
-/// `min_replicas` desired replicas, at most `max(1, floor(eviction_tolerance * desired))`
-/// per run.
 #[derive(Debug, Clone, Copy)]
 struct MemoryWindow {
     start: SimTime,
