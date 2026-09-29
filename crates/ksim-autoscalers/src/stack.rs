@@ -40,7 +40,20 @@ impl KubernetesStack {
 
 impl Autoscaler for KubernetesStack {
     fn act(&mut self, observation: &Observation) -> Actions {
-        let _ = (observation, &self.replicas, &self.resources, &self.nodes);
-        todo!()
+        let mut actions = Actions::none();
+        if let Some(recommender) = &mut self.replicas {
+            actions.replicas = recommender.recommend_replicas(observation);
+        }
+        if let Some(recommender) = &mut self.resources {
+            let plan = recommender.recommend_resources(observation);
+            actions.requests = plan.requests;
+            actions.evict = plan.evict;
+        }
+        if let Some(provisioner) = &mut self.nodes {
+            let plan = provisioner.provision(observation);
+            actions.pool_delta = plan.pool_delta;
+            actions.drain = plan.drain;
+        }
+        actions
     }
 }
