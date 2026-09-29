@@ -1,0 +1,42 @@
+# Containers
+
+Status: images and pipelines are part of Milestone 1. Docker and Podman are both supported, including rootless Podman.
+
+## Images
+
+| Image | Contents |
+|---|---|
+| `ghcr.io/seccodesmith/ksim` | minimal runtime (non-root) with `ksim-bench` |
+| `ghcr.io/seccodesmith/ksim-train` | Python + `ksim` wheel + gymnasium for training jobs |
+
+Tags: `nightly`, `nightly-YYYYMMDD`, `X.Y.Z`, `latest`. Images carry OCI labels, an SBOM (syft) and provenance attestations, and are signed with cosign.
+
+## Build
+
+One multi-stage `Containerfile` (also available as `Dockerfile`): a Rust builder stage on the pinned latest stable `rust` image, then a distroless or `debian-slim` runtime; a second target `ksim-train`.
+
+```sh
+docker build --target ksim -t ksim .
+podman build --target ksim -t ksim .
+```
+
+## Run
+
+```sh
+docker run --rm ghcr.io/seccodesmith/ksim:nightly ksim-bench --version
+podman run --rm ghcr.io/seccodesmith/ksim:nightly ksim-bench --version
+```
+
+## Compose and Kubernetes YAML
+
+`compose.yaml` works with `docker compose` and `podman compose`; a manifest for `podman kube play` lives in `deploy/`.
+
+## Verify signatures
+
+```sh
+cosign verify ghcr.io/seccodesmith/ksim:<tag> \
+  --certificate-identity-regexp 'https://github.com/SecCodeSmith/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+The identity pattern assumes keyless signing from this repository's workflows.
