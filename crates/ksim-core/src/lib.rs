@@ -1,6 +1,7 @@
 //! Cluster state, simulation clock, event queue and scheduler.
 
 pub mod actions;
+pub mod autoscaler;
 pub mod cluster;
 #[cfg(feature = "contract-tests")]
 pub mod contract;

@@ -8,3 +8,12 @@ repository.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+ksim-core.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+
+[dev-dependencies]
+approx.workspace = true
+proptest.workspace = true

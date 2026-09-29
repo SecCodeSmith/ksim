@@ -433,6 +433,13 @@ dependencies = [
 [[package]]
 name = "ksim-autoscalers"
 version = "0.1.0"
+dependencies = [
+ "approx",
+ "ksim-core",
+ "proptest",
+ "rand 0.10.3",
+ "rand_chacha 0.10.0",
+]
 
 [[package]]
 name = "ksim-bench"

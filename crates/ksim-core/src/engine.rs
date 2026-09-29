@@ -160,13 +160,19 @@ impl SimulationBuilder {
 /// Discrete-time cluster simulation. Each [`Simulation::step`] runs, in order:
 ///
 /// 1. apply actions: requests first (so pods created by the same step get the new requests),
-///    then replica changes, then node pool deltas;
-/// 2. advance the clock by one tick and apply due events (node ready, pod running, pod removed);
+///    then replica changes, evictions of outdated pods, node drains, then node pool deltas;
+///    afterwards every service is reconciled: missing non-terminating pods are created,
+///    surplus ones deleted in `Cluster::pods_to_delete` order;
+/// 2. advance the clock by one tick and apply due events (node ready, pod running, pod removed),
+///    then remove draining nodes with no bound pods;
 /// 3. schedule pending pods;
 /// 4. evaluate the performance model per service, restarting running pods of a service reporting out-of-memory
 ///    with kubelet crash-loop backoff;
 /// 5. scrape metrics on the resolution grid (consumers see the lagged snapshot);
 /// 6. publish the observation.
+///
+/// Cost per step is proportional to live pods and nodes, never to pods or nodes removed
+/// earlier in the episode.
 #[derive(Debug)]
 pub struct Simulation {
     cluster: Cluster,
@@ -429,6 +435,7 @@ impl Simulation {
             now: self.now,
             services: self.observe_services(),
             pools: self.observe_pools(),
+            ..Observation::default()
         };
     }
 
@@ -445,6 +452,7 @@ impl Simulation {
                     unschedulable: self.count_unschedulable(service),
                     requests: self.cluster.service_spec(service).requests,
                     signals: signals[index],
+                    ..ServiceObservation::default()
                 }
             })
             .collect()
@@ -468,6 +476,7 @@ impl Simulation {
                 PoolObservation {
                     ready: self.cluster.count_nodes(pool, NodePhase::Ready),
                     provisioning: self.cluster.count_nodes(pool, NodePhase::Provisioning),
+                    ..PoolObservation::default()
                 }
             })
             .collect()
