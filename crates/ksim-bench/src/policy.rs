@@ -60,7 +60,9 @@ impl Policy {
     }
 
     /// Static policies size from the scenario's demand sampled every tick for `seed`; the
-    /// oracle looks ahead by one tick plus the default pod startup maximum (5 s); the target
+    /// oracle looks ahead by two ticks plus the default pod startup maximum (5 s), because a
+    /// replica change made at `t` is scheduled at `t + tick`, runs after the startup latency and
+    /// is first observed at `t + 2 * tick`; the target
     /// utilisation of reference policies is each service's HPA target.
     #[must_use]
     pub fn build(self, scenario: &Scenario, seed: u64) -> Box<dyn Autoscaler> {
@@ -94,7 +96,7 @@ impl Policy {
                 cpu_requests(scenario),
                 target_utilization(scenario),
                 SimDuration::from_millis(
-                    scenario.tick().as_millis() + ORACLE_STARTUP_ALLOWANCE_MILLIS,
+                    2 * scenario.tick().as_millis() + ORACLE_STARTUP_ALLOWANCE_MILLIS,
                 ),
                 scenario.tick(),
             )),
