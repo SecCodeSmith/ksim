@@ -15,5 +15,7 @@ rand.workspace = true
 rand_chacha.workspace = true
 
 [dev-dependencies]
+ksim-workload.workspace = true
+ksim-perf.workspace = true
 approx.workspace = true
 proptest.workspace = true
