@@ -1,5 +1,5 @@
 use approx::assert_abs_diff_eq;
-use ksim_autoscalers::hpa::{desired_replicas, HpaBehavior, HpaSpec, ScalingPolicy, SelectPolicy};
+use ksim_autoscalers::hpa::{HpaBehavior, HpaSpec, ScalingPolicy, SelectPolicy, desired_replicas};
 use ksim_core::{
     ids::ServiceId,
     observation::{Observation, ServiceObservation},
@@ -47,7 +47,10 @@ fn hpa_behavior_default_scale_up_policies() {
 fn hpa_behavior_default_scale_down_window() {
     // upstream autoscaling/v2 defaults: scale down with a 300 s window
     let behavior = HpaBehavior::default();
-    assert_eq!(behavior.scale_down.stabilization_window, SimDuration::from_secs(300));
+    assert_eq!(
+        behavior.scale_down.stabilization_window,
+        SimDuration::from_secs(300)
+    );
 }
 
 #[test]
@@ -58,7 +61,10 @@ fn hpa_behavior_default_scale_down_policies() {
     assert_eq!(behavior.scale_down.policies.len(), 1);
     assert_eq!(
         behavior.scale_down.policies[0],
-        ScalingPolicy::Percent { value: 100, period: SimDuration::from_secs(15) }
+        ScalingPolicy::Percent {
+            value: 100,
+            period: SimDuration::from_secs(15)
+        }
     );
 }
 
@@ -72,13 +78,13 @@ fn desired_replicas_scale_up_from_3_to_6() {
     // upstream replica_calculator: utilization = 1500 / (3 * 500) = 1.0, ratio = 1.0 / 0.5 = 2.0
     // desired = ceil(2.0 * 3) = 6
     let result = desired_replicas(
-        3,    // current
-        3,    // ready
-        0,    // not_ready
+        3,      // current
+        3,      // ready
+        0,      // not_ready
         1500.0, // usage
-        500,  // request (500m)
-        0.5,  // target
-        0.1,  // tolerance
+        500,    // request (500m)
+        0.5,    // target
+        0.1,    // tolerance
     );
     assert_eq!(result, 6);
 }
@@ -89,13 +95,13 @@ fn desired_replicas_within_tolerance() {
     // utilization = 787.5 / (3 * 500) = 0.525, ratio = 0.525 / 0.5 = 1.05
     // Within tolerance [0.9, 1.1], keep current
     let result = desired_replicas(
-        3,    // current
-        3,    // ready
-        0,    // not_ready
+        3,     // current
+        3,     // ready
+        0,     // not_ready
         787.5, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,   // request
+        0.5,   // target
+        0.1,   // tolerance
     );
     assert_eq!(result, 3);
 }
@@ -106,13 +112,13 @@ fn desired_replicas_scale_down_to_2() {
     // utilization = 375 / (3 * 500) = 0.25, ratio = 0.25 / 0.5 = 0.5
     // desired = ceil(0.5 * 3) = ceil(1.5) = 2
     let result = desired_replicas(
-        3,    // current
-        3,    // ready
-        0,    // not_ready
+        3,     // current
+        3,     // ready
+        0,     // not_ready
         375.0, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,   // request
+        0.5,   // target
+        0.1,   // tolerance
     );
     assert_eq!(result, 2);
 }
@@ -124,13 +130,13 @@ fn desired_replicas_with_not_ready_within_tolerance_scale_up_direction() {
     // For scale-up, recompute with ready+not_ready at 0% usage: ratio = 1000 / (4 * 500) / 0.5 = 1.0
     // Within tolerance [0.9, 1.1], keep current 4
     let result = desired_replicas(
-        4,    // current
-        2,    // ready
-        2,    // not_ready
+        4,      // current
+        2,      // ready
+        2,      // not_ready
         1000.0, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,    // request
+        0.5,    // target
+        0.1,    // tolerance
     );
     assert_eq!(result, 4);
 }
@@ -145,13 +151,13 @@ fn desired_replicas_with_not_ready_scale_up() {
     // ratio = 1.333... / 0.5 = 2.667
     // desired = ceil(2.667 * 3) = ceil(8.0) = 8
     let result = desired_replicas(
-        3,    // current
-        2,    // ready
-        1,    // not_ready
+        3,      // current
+        2,      // ready
+        1,      // not_ready
         2000.0, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,    // request
+        0.5,    // target
+        0.1,    // tolerance
     );
     assert_eq!(result, 8);
 }
@@ -162,13 +168,13 @@ fn desired_replicas_scale_down_ignores_not_ready() {
     // First compute with ready only: ratio = 250 / (2 * 500) / 0.5 = 0.5 (outside tolerance, scale-down direction)
     // For scale-down, ignore not-ready: desired = ceil(0.5 * 2) = 1
     let result = desired_replicas(
-        4,    // current
-        2,    // ready
-        2,    // not_ready
+        4,     // current
+        2,     // ready
+        2,     // not_ready
         250.0, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,   // request
+        0.5,   // target
+        0.1,   // tolerance
     );
     assert_eq!(result, 1);
 }
@@ -178,13 +184,13 @@ fn desired_replicas_no_ready_pods() {
     // ready 0 → current
     // No ready pods to compute on, return current
     let result = desired_replicas(
-        5,    // current
-        0,    // ready
-        2,    // not_ready
+        5,      // current
+        0,      // ready
+        2,      // not_ready
         1000.0, // usage
-        500,  // request
-        0.5,  // target
-        0.1,  // tolerance
+        500,    // request
+        0.5,    // target
+        0.1,    // tolerance
     );
     assert_eq!(result, 5);
 }

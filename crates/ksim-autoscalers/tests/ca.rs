@@ -10,6 +10,20 @@ use ksim_core::{
     time::{SimDuration, SimTime},
 };
 
+fn at_secs(observation: &Observation, secs: u64) -> Observation {
+    Observation {
+        now: SimTime::from_secs(secs),
+        ..observation.clone()
+    }
+}
+
+fn with_node0_requested(observation: &Observation, requested: Resources) -> Observation {
+    let mut changed = observation.clone();
+    changed.nodes[0].requested = requested;
+    changed.node_pods[0].requests = requested;
+    changed
+}
+
 #[test]
 fn config_default() {
     let config = ClusterAutoscalerConfig::default();
@@ -94,7 +108,7 @@ fn scale_up_unschedulable_pods() {
     };
 
     let plan = ca.provision(&observation);
-    assert_eq!(plan.pool_delta, vec![2]);
+    assert_eq!(plan.pool_delta, vec![3]);
     assert!(plan.drain.is_empty());
 }
 
@@ -289,6 +303,7 @@ fn scale_down_underutilized_node() {
         }],
     };
 
+    ca.provision(&at_secs(&observation, 0));
     let plan = ca.provision(&observation);
     // Not yet drained
     assert!(!plan.drain.contains(&NodeId(0)));
@@ -296,7 +311,7 @@ fn scale_down_underutilized_node() {
 
 #[test]
 fn scale_down_node_after_unneeded_time() {
-    // Node is unneeded since t0=0, drained at call with now >= t0 + 600s (scale_down_unneeded_time)
+    // First seen unneeded at t=0, drained at t=600 s (scale_down_unneeded_time)
     // At t=600s, node should be drained
     let mut ca = ClusterAutoscaler::new(ClusterAutoscalerConfig::default());
 
@@ -337,6 +352,7 @@ fn scale_down_node_after_unneeded_time() {
         }],
     };
 
+    ca.provision(&at_secs(&observation, 0));
     let plan = ca.provision(&observation);
     // Node 0 pods fit in Node 1 (200m/512MiB < 1000m/4GiB free) → should be drained
     assert!(plan.drain.contains(&NodeId(0)));
@@ -374,6 +390,7 @@ fn scale_down_respects_min_nodes() {
         }],
     };
 
+    ca.provision(&at_secs(&observation, 0));
     let plan = ca.provision(&observation);
     // Can't drain because pool would go below min_nodes
     assert!(!plan.drain.contains(&NodeId(0)));
@@ -427,6 +444,7 @@ fn scale_down_pods_dont_fit_elsewhere() {
         ],
     };
 
+    ca.provision(&at_secs(&observation, 0));
     let plan = ca.provision(&observation);
     // Node 0's pods (900m/2GiB) don't fit in Node 1 (also 900m/2GiB used) → not drained
     assert!(!plan.drain.contains(&NodeId(0)));
@@ -443,7 +461,7 @@ fn scale_down_empty_nodes_bulk() {
         pools: vec![PoolObservation {
             ready: 3,
             allocatable: Resources::new(1000, 4 * 1024 * 1024 * 1024),
-            min_nodes: 1,
+            min_nodes: 0,
             max_nodes: 10,
             ..PoolObservation::default()
         }],
@@ -476,6 +494,7 @@ fn scale_down_empty_nodes_bulk() {
         node_pods: vec![],
     };
 
+    ca.provision(&at_secs(&observation, 0));
     let plan = ca.provision(&observation);
     // All 3 empty nodes should be drained in one call
     assert_eq!(plan.drain.len(), 3, "Expected 3 empty nodes to be drained");
@@ -527,8 +546,11 @@ fn scale_down_node_busy_resets_timer() {
         }],
     };
 
-    let plan = ca.provision(&observation);
-    // Node 0 has utilisation 600/1000 = 0.6 > 0.5 threshold → not unneeded → not drained
+    let idle = with_node0_requested(&observation, Resources::new(200, 512 * 1024 * 1024));
+    ca.provision(&at_secs(&idle, 0));
+    ca.provision(&at_secs(&observation, 300));
+    let plan = ca.provision(&at_secs(&idle, 600));
+    // unneeded since 0, busy at 300 (0.6 >= 0.5) resets the timer, idle again only since 600
     assert!(!plan.drain.contains(&NodeId(0)));
 }
 

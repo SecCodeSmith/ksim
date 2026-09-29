@@ -92,9 +92,9 @@ fn constant_usage_produces_recommendation() {
     assert!(rec.is_some());
     let rec = rec.unwrap();
 
-    // target should be within [200*1.15, 200*1.15*1.06]
+    // buckets near 200m are ~10 % wide (first 10m, ratio 1.05): target within [200*1.15, 200*1.15*1.10]
     let target_cpu_lower = 200.0 * 1.15;
-    let target_cpu_upper = 200.0 * 1.15 * 1.06;
+    let target_cpu_upper = 200.0 * 1.15 * 1.10;
     assert!(
         rec.target.cpu_millis as f64 >= target_cpu_lower
             && rec.target.cpu_millis as f64 <= target_cpu_upper,
@@ -104,9 +104,9 @@ fn constant_usage_produces_recommendation() {
         target_cpu_upper
     );
 
-    // target memory should be within [300MiB*1.15, 300MiB*1.15*1.06]
+    // target memory within [300MiB*1.15, 300MiB*1.15*1.10] (bucket width ~8 % at 300 MiB)
     let target_memory_lower = (300.0 * MIB as f64) * 1.15;
-    let target_memory_upper = (300.0 * MIB as f64) * 1.15 * 1.06;
+    let target_memory_upper = (300.0 * MIB as f64) * 1.15 * 1.10;
     assert!(
         rec.target.memory_bytes as f64 >= target_memory_lower
             && rec.target.memory_bytes as f64 <= target_memory_upper,
@@ -364,7 +364,7 @@ fn updater_auto_mode_requests_in_bounds() {
             pending: 0,
             unschedulable: 0,
             outdated: 0,
-            requests: Resources::new(230, 345 * MIB),
+            requests: Resources::new(260, 400 * MIB),
             limits: Resources::new(500, 512 * MIB),
             signals: ServiceSignals {
                 cpu_usage_millis: 200.0 * 4.0,
