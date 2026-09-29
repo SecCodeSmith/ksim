@@ -1,4 +1,4 @@
-use ksim_autoscalers::reference::{replicas_for_demand, Oracle, StaticReplicas};
+use ksim_autoscalers::reference::{Oracle, StaticReplicas, replicas_for_demand};
 use ksim_autoscalers::traits::ReplicaRecommender;
 use ksim_core::{
     autoscaler::Autoscaler,
