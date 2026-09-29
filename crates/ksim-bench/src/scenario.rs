@@ -120,7 +120,16 @@ pub struct Scenario {
 
 impl Scenario {
     /// # Errors
-    /// Malformed TOML, or no pools, no services, a zero tick, or a duration shorter than a tick.
+    /// Malformed TOML, or an inconsistent scenario:
+    /// - no pools, no services, a zero tick, or a duration shorter than a tick;
+    /// - pool: `cpu_millis` and `memory_mib` positive, `min_nodes <= max_nodes`,
+    ///   `initial_nodes <= max_nodes`;
+    /// - service: requests positive, limits at least the requests, `cpu_millis_per_request`
+    ///   positive;
+    /// - performance: queueing `cpu_millis_per_request` and `timeout_ms` positive, utilization
+    ///   `base_latency_ms` positive;
+    /// - HPA: `0 < target_cpu_utilization <= 1`, `1 <= min_replicas <= max_replicas`;
+    /// - SLO: `latency_ms > 0`, `0 <= max_error_rate < 1`, `0 < availability_target < 1`.
     pub fn from_toml_str(text: &str) -> Result<Self, ScenarioError> {
         let scenario: Self = toml::from_str(text)?;
         scenario.validate()?;
@@ -128,6 +137,13 @@ impl Scenario {
     }
 
     fn validate(&self) -> Result<(), ScenarioError> {
+        self.validate_shape()?;
+        validate_slo(&self.slo)?;
+        self.pools.iter().try_for_each(PoolScenario::validate)?;
+        self.services.iter().try_for_each(ServiceScenario::validate)
+    }
+
+    fn validate_shape(&self) -> Result<(), ScenarioError> {
         let problem = if self.pools.is_empty() {
             Some("no pools")
         } else if self.services.is_empty() {
@@ -191,6 +207,127 @@ impl Scenario {
         builder
             .build()
             .map_err(|error| ScenarioError::Invalid(format!("{error:?}")))
+    }
+}
+
+fn require(holds: bool, owner: &str, rule: &str) -> Result<(), ScenarioError> {
+    if holds {
+        Ok(())
+    } else {
+        Err(ScenarioError::Invalid(format!("{owner}: {rule}")))
+    }
+}
+
+fn validate_slo(slo: &Slo) -> Result<(), ScenarioError> {
+    require(slo.latency_ms > 0.0, "slo", "latency_ms must be positive")?;
+    require(
+        (0.0..1.0).contains(&slo.max_error_rate),
+        "slo",
+        "max_error_rate must be in [0, 1)",
+    )?;
+    require(
+        slo.availability_target > 0.0 && slo.availability_target < 1.0,
+        "slo",
+        "availability_target must be in (0, 1)",
+    )
+}
+
+impl PoolScenario {
+    fn validate(&self) -> Result<(), ScenarioError> {
+        let owner = format!("pool `{}`", self.name);
+        require(self.cpu_millis > 0, &owner, "cpu_millis must be positive")?;
+        require(self.memory_mib > 0, &owner, "memory_mib must be positive")?;
+        require(
+            self.min_nodes <= self.max_nodes,
+            &owner,
+            "min_nodes exceeds max_nodes",
+        )?;
+        require(
+            self.initial_nodes <= self.max_nodes,
+            &owner,
+            "initial_nodes exceeds max_nodes",
+        )
+    }
+}
+
+impl ServiceScenario {
+    fn validate(&self) -> Result<(), ScenarioError> {
+        let owner = format!("service `{}`", self.name);
+        require(
+            self.requests_cpu_millis > 0,
+            &owner,
+            "requests_cpu_millis must be positive",
+        )?;
+        require(
+            self.requests_memory_mib > 0,
+            &owner,
+            "requests_memory_mib must be positive",
+        )?;
+        require(
+            self.limits_cpu_millis >= self.requests_cpu_millis,
+            &owner,
+            "limits_cpu_millis is below requests_cpu_millis",
+        )?;
+        require(
+            self.limits_memory_mib >= self.requests_memory_mib,
+            &owner,
+            "limits_memory_mib is below requests_memory_mib",
+        )?;
+        require(
+            self.cpu_millis_per_request > 0.0,
+            &owner,
+            "cpu_millis_per_request must be positive",
+        )?;
+        self.performance.validate(&owner)?;
+        self.hpa.validate(&owner)
+    }
+}
+
+impl PerformanceScenario {
+    fn validate(&self, owner: &str) -> Result<(), ScenarioError> {
+        match *self {
+            Self::Queueing {
+                cpu_millis_per_request,
+                timeout_ms,
+                ..
+            } => {
+                require(
+                    cpu_millis_per_request > 0.0,
+                    owner,
+                    "queueing cpu_millis_per_request must be positive",
+                )?;
+                require(
+                    timeout_ms > 0.0,
+                    owner,
+                    "queueing timeout_ms must be positive",
+                )
+            }
+            Self::Utilization { base_latency_ms } => require(
+                base_latency_ms > 0.0,
+                owner,
+                "utilization base_latency_ms must be positive",
+            ),
+        }
+    }
+}
+
+impl HpaScenario {
+    fn validate(&self, owner: &str) -> Result<(), ScenarioError> {
+        require(
+            self.target_cpu_utilization > 0.0 && self.target_cpu_utilization <= 1.0,
+            owner,
+            "hpa target_cpu_utilization must be in (0, 1]",
+        )?;
+        require(
+            self.min_replicas >= 1,
+            owner,
+            "hpa min_replicas must be at least 1",
+        )?;
+        require(
+            self.min_replicas <= self.max_replicas,
+            owner,
+            "hpa min_replicas exceeds max_replicas",
+        )
     }
 }
 
