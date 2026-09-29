@@ -316,18 +316,13 @@ fn invalid_utf8_name_error() {
     bytes.extend_from_slice(&(1_u32).to_le_bytes()); // service_count
     bytes.extend_from_slice(&(1_u32).to_le_bytes()); // tick_count
     bytes.extend_from_slice(&(48_u64).to_le_bytes()); // names_offset
-    bytes.extend_from_slice(&(3_u64).to_le_bytes()); // names_len: 3
-    bytes.extend_from_slice(&(56_u64).to_le_bytes()); // data_offset
+    bytes.extend_from_slice(&(4_u64).to_le_bytes()); // names_len: u16 + 2 bytes
+    bytes.extend_from_slice(&(52_u64).to_le_bytes()); // data_offset: 48 + 4, already aligned
 
-    // Names: u16 length + invalid UTF-8
     bytes.extend_from_slice(&(2_u16).to_le_bytes());
-    bytes.extend_from_slice(&[0xFF, 0xFE]); // Invalid UTF-8
+    bytes.extend_from_slice(&[0xFF, 0xFE]);
 
-    // Padding
-    bytes.extend_from_slice(&[0, 0, 0]);
-
-    // Data: 3 f32 values (1 column, 1 service, 1 tick)
-    // Actually we have 3 columns * 1 service * 1 tick = 3 f32 values
+    // 3 columns * 1 service * 1 tick, total length 52 + 12 = 64
     bytes.extend_from_slice(&(1.0_f32).to_le_bytes());
     bytes.extend_from_slice(&(2.0_f32).to_le_bytes());
     bytes.extend_from_slice(&(3.0_f32).to_le_bytes());

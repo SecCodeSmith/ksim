@@ -4,7 +4,7 @@ use ksim_core::ids::ServiceId;
 use ksim_core::time::{SimDuration, SimTime};
 use ksim_core::workload::WorkloadSource;
 use ksim_workload::trace::{
-    encode, Interpolation, ServiceSeries, TraceError, TraceFile, TraceOptions, TraceWorkload,
+    Interpolation, ServiceSeries, TraceError, TraceFile, TraceOptions, TraceWorkload, encode,
 };
 
 fn make_trace() -> Arc<TraceFile> {
@@ -35,7 +35,11 @@ fn default_options_services_count() {
     let file = make_trace();
     let options = TraceOptions::default();
     let workload = TraceWorkload::new(file, options).expect("TraceWorkload::new should succeed");
-    assert_eq!(workload.services(), 2, "default options should have 2 services");
+    assert_eq!(
+        workload.services(),
+        2,
+        "default options should have 2 services"
+    );
 }
 
 #[test]
@@ -309,8 +313,8 @@ fn scale_nan_is_malformed() {
 }
 
 ksim_core::workload_source_contract_tests!(trace_workload_contracts, || {
+    use ksim_workload::trace::{ServiceSeries, TraceFile, TraceOptions, TraceWorkload, encode};
     use std::sync::Arc;
-    use ksim_workload::trace::{encode, ServiceSeries, TraceFile, TraceOptions, TraceWorkload};
 
     // Helper inline to ensure scope access
     let services = vec![

@@ -290,8 +290,7 @@ path = "test.ksimtrace"
     let result = Scenario::from_toml_file(&scenario_file);
     assert!(result.is_err());
     match result {
-        Err(ScenarioError::Trace(TraceError::UnknownService(_)) | ScenarioError::Invalid(_)) => {
-        }
+        Err(ScenarioError::Trace(TraceError::UnknownService(_)) | ScenarioError::Invalid(_)) => {}
         Err(e) => panic!("expected UnknownService or Invalid error, got {e:?}"),
         Ok(_) => panic!("expected error but got success"),
     }
