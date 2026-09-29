@@ -8,3 +8,14 @@ repository.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+rand.workspace = true
+rand_chacha.workspace = true
+
+[dev-dependencies]
+approx.workspace = true
+proptest.workspace = true
+
+[features]
+contract-tests = []

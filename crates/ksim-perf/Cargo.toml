@@ -8,3 +8,11 @@ repository.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+ksim-core.workspace = true
+
+[dev-dependencies]
+ksim-core = { workspace = true, features = ["contract-tests"] }
+approx.workspace = true
+proptest.workspace = true
