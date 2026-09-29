@@ -2,7 +2,7 @@
 
 ksim is a fast, deterministic, trace-driven simulator of a Kubernetes cluster for training and benchmarking autoscalers (reinforcement learning or heuristic). It replays real public cluster traces (Alibaba 2018 and 2021/2022, Google Borg 2019, Azure Functions 2019), ships the default Kubernetes autoscalers (HPA, VPA, Cluster Autoscaler) as baselines, and reports availability, SLO and elasticity metrics from the literature. The core is Rust for low CPU and RAM overhead; Python is used only at the edges (dataset preprocessing, Gymnasium bindings). A C ABI is exported as well.
 
-## Status: Milestones 1-4 (skeleton, simulation core, HPA/VPA/CA baselines, metrics and benchmark harness)
+## Status: Milestones 1-5 (skeleton, simulation core, HPA/VPA/CA baselines, metrics and benchmark harness, trace-driven workloads)
 
 Implemented:
 - Cargo workspace with crates `ksim-core`, `ksim-workload`, `ksim-perf`, `ksim-autoscalers`, `ksim-metrics`, `ksim-bench`, `ksim-py`, `ksim-capi`
@@ -14,8 +14,9 @@ Implemented:
 - Simulation core, synthetic workloads and performance models (Milestone 2)
 - HPA, VPA and Cluster Autoscaler baselines with `KubernetesStack` (Milestone 3)
 - `ksim-metrics` (availability, SLO, SPEC RG elasticity, cost, operational), `ksim-bench run` / `list-policies` and the `ksim.analysis` leaderboard (Milestone 4)
+- Dataset converters (`python -m ksim.datasets convert`), the `.ksimtrace` format and trace-driven scenarios via `[trace]` and `kind = "trace"` curves (Milestone 5)
 
-Planned (Milestones 5-7): dataset normalizers, Gymnasium/vector env, calibration against a real `kind` cluster. See [docs/PLAN.md](docs/PLAN.md).
+Planned (Milestones 6-7): Gymnasium/vector env, calibration against a real `kind` cluster. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Quick start
 

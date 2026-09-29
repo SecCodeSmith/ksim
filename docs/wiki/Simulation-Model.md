@@ -1,6 +1,6 @@
 # Simulation model
 
-Status: **Implemented** (Milestone 2): core engine, scheduler, lifecycle, scrape pipeline, synthetic workloads, queueing and utilisation performance models. Trace replay is Milestone 3 (Planned).
+Status: **Implemented** (Milestone 2): core engine, scheduler, lifecycle, scrape pipeline, synthetic workloads, queueing and utilisation performance models. `TraceWorkload` trace replay: Implemented (Milestone 5).
 
 ## Time model
 
@@ -80,6 +80,15 @@ CPU usage is capped at `ready_pods * limits.cpu_millis`; the excess fraction is 
 | `FlashCrowd` | `base` before `start`; then `base + (peak - base) * exp(-(t - start) / decay)` |
 
 `DemandProfile` maps rate to demand: `cpu = rate * cpu_millis_per_request`, `memory = memory_base_bytes + rate * memory_bytes_per_rps`.
+
+## Trace workload
+
+`TraceWorkload` (`ksim-workload::trace`) replays a `.ksimtrace` (see [Datasets](Datasets)) as a pure function of time. Trace time is `start + now * compress`; the sample position is `trace time / tick`.
+
+- Interpolation: `step` uses the tick at `floor(position)`; `linear` blends it with the next tick by the fractional part.
+- Past the last tick: `wrap` cycles back to tick 0 (the last tick blends toward tick 0 when linear); otherwise the last value is held.
+- `scale` multiplies request rate and CPU only. Memory is a footprint and is not scaled.
+- Services are selected and ordered by name from the scenario's `kind = "trace"` curves; unknown names, or non-positive or non-finite `compress` or `scale`, are rejected at load.
 
 ## Performance baseline
 

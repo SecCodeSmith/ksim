@@ -19,7 +19,7 @@ Every wiki page marks content as **Implemented** (exists in the repository now) 
 | Simulation core, perf model | Implemented (Milestone 2) |
 | HPA / VPA / CA baselines, `KubernetesStack` | Implemented (Milestone 3) |
 | Metrics (`ksim-metrics`), `ksim-bench run`, `ksim.analysis` leaderboard | Implemented (Milestone 4) |
-| Dataset normalizers, `.ksimtrace` | Planned (Milestone 5) |
+| Dataset converters (Alibaba 2018/2021, Azure 2019, Borg 2019), `.ksimtrace`, trace-driven workloads | Implemented (Milestone 5) |
 | Gymnasium env, vector env, PPO example | Planned (Milestone 6) |
 | Calibration against a real `kind` cluster | Planned (Milestone 7) |
 

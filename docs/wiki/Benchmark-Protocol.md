@@ -1,10 +1,10 @@
 # Benchmark protocol
 
-Status: **Implemented** (Milestone 4: harness, synthetic scenarios, policies, analysis). Trace-driven scenarios are **Planned** (Milestone 5).
+Status: **Implemented** (Milestone 4: harness, synthetic scenarios, policies, analysis). Trace-driven scenarios: **Implemented** (Milestone 5).
 
 ## Scenario TOML
 
-Files in `scenarios/` (`synthetic_steady`, `synthetic_diurnal`, `synthetic_step`, `synthetic_flash_crowd`). Unknown fields are rejected. Durations are in seconds. A scenario needs at least one pool and one service, `tick_s > 0` and `duration_s >= tick_s`; the episode has `duration_s / tick_s` steps.
+Files in `scenarios/` (`synthetic_steady`, `synthetic_diurnal`, `synthetic_step`, `synthetic_flash_crowd`, and the trace-driven `alibaba2018_fixture` using `curve = { kind = "trace", service = "..." }`). Unknown fields are rejected. Durations are in seconds. A scenario needs at least one pool and one service, `tick_s > 0` and `duration_s >= tick_s`; the episode has `duration_s / tick_s` steps.
 
 | Table | Fields |
 |---|---|
@@ -12,6 +12,7 @@ Files in `scenarios/` (`synthetic_steady`, `synthetic_diurnal`, `synthetic_step`
 | `[slo]` | `latency_ms`, `percentile` (`"P95"` or `"P99"`), `max_error_rate`, `availability_target` |
 | `[[pools]]` | `name`, `cpu_millis`, `memory_mib`, `min_nodes`, `max_nodes`, `initial_nodes`, `price_per_hour` |
 | `[[services]]` | `name`, `requests_cpu_millis`, `requests_memory_mib`, `limits_cpu_millis`, `limits_memory_mib`, `initial_replicas`, `cpu_millis_per_request`, `memory_base_mib`, `memory_mib_per_rps` |
+| `[trace]` | `path` (relative to the scenario file), `start_s` (0), `compress` (1), `scale` (1), `interpolation` (`"step"` or `"linear"`), `wrap` (false); see [Datasets](Datasets) |
 | `[services.curve]` | `kind` plus the fields below |
 | `[services.performance]` | `kind` plus the fields below |
 | `[services.hpa]` | `min_replicas`, `max_replicas`, `target_cpu_utilization` |
@@ -48,7 +49,7 @@ Reference policies (`static-*`, `oracle`) only choose replicas, using `max(1, ce
 
 ## Seeds and determinism
 
-`--seeds N` runs seeds `first_seed .. first_seed + N` (default first seed 0, default N 10). The seed drives the workload noise, the latency model and the Cluster Autoscaler; the same scenario, policy and seed give identical metrics. Synthetic scenarios have little seed variance (latencies are the only randomness for noise-free curves), so their confidence intervals are narrow; trace scenarios with real variability arrive in Milestone 5.
+`--seeds N` runs seeds `first_seed .. first_seed + N` (default first seed 0, default N 10). The seed drives the workload noise, the latency model and the Cluster Autoscaler; the same scenario, policy and seed give identical metrics. Synthetic scenarios have little seed variance (latencies are the only randomness for noise-free curves), so their confidence intervals are narrow; trace scenarios carry real variability.
 
 ## Commands
 
