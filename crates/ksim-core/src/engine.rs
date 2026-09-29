@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
@@ -37,6 +39,7 @@ pub struct SimulationBuilder {
     services: Vec<ServiceSpec>,
     workload: Option<Box<dyn WorkloadSource>>,
     performance: Option<Box<dyn PerformanceModel>>,
+    performance_overrides: BTreeMap<usize, Box<dyn PerformanceModel>>,
     scoring: Option<Box<dyn ScoringPolicy>>,
     latencies: Option<Box<dyn LatencyModel>>,
     scrape: ScrapeConfig,
@@ -52,6 +55,7 @@ impl SimulationBuilder {
             services: Vec::new(),
             workload: None,
             performance: None,
+            performance_overrides: BTreeMap::new(),
             scoring: None,
             latencies: None,
             scrape: ScrapeConfig::default(),
@@ -93,9 +97,9 @@ impl SimulationBuilder {
     /// every service has an override (otherwise `build` returns `MissingPerformanceModel`).
     /// An override for a service index that does not exist is a `ServiceCountMismatch`.
     #[must_use]
-    pub fn performance_for(self, service: ServiceId, model: Box<dyn PerformanceModel>) -> Self {
-        let _ = (service, model);
-        todo!()
+    pub fn performance_for(mut self, service: ServiceId, model: Box<dyn PerformanceModel>) -> Self {
+        self.performance_overrides.insert(service.index(), model);
+        self
     }
 
     #[must_use]
@@ -123,9 +127,6 @@ impl SimulationBuilder {
     /// Returns a [`BuildError`] when a required component is missing or inconsistent.
     pub fn build(self) -> Result<Simulation, BuildError> {
         let workload = self.workload.ok_or(BuildError::MissingWorkload)?;
-        let performance = self
-            .performance
-            .ok_or(BuildError::MissingPerformanceModel)?;
         if workload.services() != self.services.len() {
             return Err(BuildError::ServiceCountMismatch {
                 workload: workload.services(),
@@ -135,6 +136,11 @@ impl SimulationBuilder {
         if self.tick == SimDuration::ZERO {
             return Err(BuildError::ZeroTick);
         }
+        let performance = PerformanceRouter::resolve(
+            self.performance,
+            self.performance_overrides,
+            self.services.len(),
+        )?;
         let mut cluster = Cluster::new();
         for spec in self.pools {
             cluster.add_pool(spec);
@@ -199,9 +205,52 @@ pub struct Simulation {
     latencies: Box<dyn LatencyModel>,
     lifecycle_rng: ChaCha8Rng,
     workload: Box<dyn WorkloadSource>,
-    performance: Box<dyn PerformanceModel>,
+    performance: PerformanceRouter,
     metrics: MetricsPipeline,
     signals: Vec<ServiceSignals>,
+}
+
+/// One performance model per service: the per-service override, else the shared default.
+#[derive(Debug)]
+struct PerformanceRouter {
+    default: Option<Box<dyn PerformanceModel>>,
+    overrides: Vec<Option<Box<dyn PerformanceModel>>>,
+}
+
+impl PerformanceRouter {
+    fn resolve(
+        default: Option<Box<dyn PerformanceModel>>,
+        overrides: BTreeMap<usize, Box<dyn PerformanceModel>>,
+        services: usize,
+    ) -> Result<Self, BuildError> {
+        if let Some((&index, _)) = overrides.last_key_value()
+            && index >= services
+        {
+            return Err(BuildError::ServiceCountMismatch {
+                workload: services,
+                services,
+            });
+        }
+        let mut slots: Vec<Option<Box<dyn PerformanceModel>>> =
+            std::iter::repeat_with(|| None).take(services).collect();
+        for (index, model) in overrides {
+            slots[index] = Some(model);
+        }
+        if default.is_none() && slots.iter().any(Option::is_none) {
+            return Err(BuildError::MissingPerformanceModel);
+        }
+        Ok(Self {
+            default,
+            overrides: slots,
+        })
+    }
+
+    fn model(&self, service: ServiceId) -> &dyn PerformanceModel {
+        self.overrides[service.index()]
+            .as_deref()
+            .or(self.default.as_deref())
+            .expect("resolve guarantees a model for every service")
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -488,7 +537,7 @@ impl Simulation {
             limits: spec.limits,
         };
         let demand = self.workload.demand(service, self.now);
-        self.performance.evaluate(&capacity, &demand)
+        self.performance.model(service).evaluate(&capacity, &demand)
     }
 
     fn restart_running_pods(&mut self, service: ServiceId) {
