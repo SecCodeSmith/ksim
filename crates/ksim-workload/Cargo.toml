@@ -15,6 +15,7 @@ ksim-core.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 rand_distr.workspace = true
+thiserror = "2.0.21"
 
 [dev-dependencies]
 ksim-core = { workspace = true, features = ["contract-tests"] }

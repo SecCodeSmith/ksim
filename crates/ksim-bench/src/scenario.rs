@@ -12,7 +12,9 @@ use ksim_perf::{queueing::QueueingModel, utilization::UtilizationModel};
 use ksim_workload::synthetic::{
     Constant, CurveWorkload, DemandCurve, DemandProfile, FlashCrowd, Ramp, Sinusoid, Step,
 };
+use ksim_workload::trace::{TraceError, TraceFile};
 use serde::Deserialize;
+use std::{path::Path, sync::Arc};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ScenarioError {
@@ -20,6 +22,10 @@ pub enum ScenarioError {
     Parse(#[from] toml::de::Error),
     #[error("scenario is inconsistent: {0}")]
     Invalid(String),
+    #[error("cannot read scenario: {0}")]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Trace(#[from] TraceError),
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -64,6 +70,10 @@ pub enum CurveScenario {
         start_s: u64,
         decay_s: u64,
     },
+    /// Replays the named service of the scenario's `[trace]` file.
+    Trace {
+        service: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -105,6 +115,36 @@ pub struct ServiceScenario {
     pub hpa: HpaScenario,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InterpolationScenario {
+    #[default]
+    Step,
+    Linear,
+}
+
+/// Trace replay settings, mirroring `ksim_workload::trace::TraceOptions`; `path` is relative
+/// to the scenario file (or the working directory for [`Scenario::from_toml_str`]).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TraceScenario {
+    pub path: String,
+    #[serde(default)]
+    pub start_s: u64,
+    #[serde(default = "one")]
+    pub compress: f64,
+    #[serde(default = "one")]
+    pub scale: f64,
+    #[serde(default)]
+    pub interpolation: InterpolationScenario,
+    #[serde(default)]
+    pub wrap: bool,
+}
+
+fn one() -> f64 {
+    1.0
+}
+
 /// A benchmark scenario file. Durations are seconds; the workload seed of noisy curves is the
 /// episode seed so every seed is a different but reproducible realisation.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -116,6 +156,10 @@ pub struct Scenario {
     pub slo: Slo,
     pub pools: Vec<PoolScenario>,
     pub services: Vec<ServiceScenario>,
+    #[serde(default)]
+    pub trace: Option<TraceScenario>,
+    #[serde(skip)]
+    loaded_trace: Option<Arc<TraceFile>>,
 }
 
 impl Scenario {
@@ -129,11 +173,36 @@ impl Scenario {
     /// - performance: queueing `cpu_millis_per_request` and `timeout_ms` positive, utilization
     ///   `base_latency_ms` positive;
     /// - HPA: `0 < target_cpu_utilization <= 1`, `1 <= min_replicas <= max_replicas`;
-    /// - SLO: `latency_ms > 0`, `0 <= max_error_rate < 1`, `0 < availability_target < 1`.
+    /// - SLO: `latency_ms > 0`, `0 <= max_error_rate < 1`, `0 < availability_target < 1`;
+    /// - trace: services use `kind = "trace"` curves if and only if a `[trace]` table exists,
+    ///   every named service exists in the file, `compress` and `scale` are positive; the file
+    ///   is read and validated here, so a missing or corrupt file is reported immediately.
     pub fn from_toml_str(text: &str) -> Result<Self, ScenarioError> {
-        let scenario: Self = toml::from_str(text)?;
+        Self::parse(text, Path::new("."))
+    }
+
+    /// Like [`Scenario::from_toml_str`], resolving the trace path against the file's directory.
+    ///
+    /// # Errors
+    /// I/O errors reading the scenario and every error of [`Scenario::from_toml_str`].
+    pub fn from_toml_file(path: impl AsRef<Path>) -> Result<Self, ScenarioError> {
+        let _ = path;
+        todo!()
+    }
+
+    fn parse(text: &str, base: &Path) -> Result<Self, ScenarioError> {
+        let mut scenario: Self = toml::from_str(text)?;
         scenario.validate()?;
+        scenario.attach_trace(base)?;
         Ok(scenario)
+    }
+
+    fn attach_trace(&mut self, base: &Path) -> Result<(), ScenarioError> {
+        let Some(trace) = &self.trace else {
+            return Ok(());
+        };
+        let _ = (trace, base, &mut self.loaded_trace);
+        todo!()
     }
 
     fn validate(&self) -> Result<(), ScenarioError> {
@@ -170,7 +239,9 @@ impl Scenario {
         SimDuration::from_secs(self.tick_s)
     }
 
-    /// The scenario's true demand for `seed`, also used to drive the simulation.
+    /// The scenario's true demand for `seed`, also used to drive the simulation; trace
+    /// scenarios replay their trace (a `TraceWorkload` over the services' trace names, in
+    /// scenario order) and ignore the seed.
     #[must_use]
     pub fn workload(&self, seed: u64) -> Box<dyn WorkloadSource> {
         let services = self
@@ -422,6 +493,7 @@ impl CurveScenario {
                 start: SimTime::from_secs(start_s),
                 decay: SimDuration::from_secs(decay_s),
             }),
+            Self::Trace { .. } => todo!(),
         }
     }
 }
