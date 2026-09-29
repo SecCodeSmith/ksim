@@ -10,10 +10,8 @@ use ksim_metrics::report::EpisodeReport;
 fn write_json_lines_outputs_one_per_report() {
     let text = include_str!("fixtures/tiny.toml");
     let scenario = Scenario::from_toml_str(text).expect("failed to parse tiny.toml");
-    let report_seed_1 = run_episode(&scenario, Policy::K8s, 1)
-        .expect("failed to run episode");
-    let report_seed_2 = run_episode(&scenario, Policy::K8s, 2)
-        .expect("failed to run episode");
+    let report_seed_1 = run_episode(&scenario, Policy::K8s, 1).expect("failed to run episode");
+    let report_seed_2 = run_episode(&scenario, Policy::K8s, 2).expect("failed to run episode");
 
     let reports = vec![report_seed_1, report_seed_2];
     let mut output = Vec::new();
@@ -28,8 +26,7 @@ fn write_json_lines_outputs_one_per_report() {
 fn write_json_lines_output_is_valid_json() {
     let text = include_str!("fixtures/tiny.toml");
     let scenario = Scenario::from_toml_str(text).expect("failed to parse tiny.toml");
-    let report = run_episode(&scenario, Policy::K8s, 1)
-        .expect("failed to run episode");
+    let report = run_episode(&scenario, Policy::K8s, 1).expect("failed to run episode");
 
     let reports = vec![report.clone()];
     let mut output = Vec::new();
@@ -37,8 +34,7 @@ fn write_json_lines_output_is_valid_json() {
 
     let output_str = String::from_utf8(output).expect("invalid utf8");
     let line = output_str.lines().next().expect("no output lines");
-    let parsed: EpisodeReport = serde_json::from_str(line)
-        .expect("failed to parse json line");
+    let parsed: EpisodeReport = serde_json::from_str(line).expect("failed to parse json line");
     assert_eq!(parsed.seed, 1);
 }
 
@@ -46,8 +42,7 @@ fn write_json_lines_output_is_valid_json() {
 fn write_json_lines_round_trips_through_serde() {
     let text = include_str!("fixtures/tiny.toml");
     let scenario = Scenario::from_toml_str(text).expect("failed to parse tiny.toml");
-    let original = run_episode(&scenario, Policy::K8s, 1)
-        .expect("failed to run episode");
+    let original = run_episode(&scenario, Policy::K8s, 1).expect("failed to run episode");
 
     let reports = vec![original.clone()];
     let mut output = Vec::new();
@@ -55,8 +50,7 @@ fn write_json_lines_round_trips_through_serde() {
 
     let output_str = String::from_utf8(output).expect("invalid utf8");
     let line = output_str.lines().next().expect("no output lines");
-    let parsed: EpisodeReport = serde_json::from_str(line)
-        .expect("failed to parse json line");
+    let parsed: EpisodeReport = serde_json::from_str(line).expect("failed to parse json line");
 
     assert_eq!(parsed.scenario, original.scenario);
     assert_eq!(parsed.policy, original.policy);
@@ -68,8 +62,7 @@ fn write_json_lines_round_trips_through_serde() {
 fn write_csv_has_correct_header() {
     let text = include_str!("fixtures/tiny.toml");
     let scenario = Scenario::from_toml_str(text).expect("failed to parse tiny.toml");
-    let report = run_episode(&scenario, Policy::K8s, 1)
-        .expect("failed to run episode");
+    let report = run_episode(&scenario, Policy::K8s, 1).expect("failed to run episode");
 
     let reports = vec![report];
     let mut output = Vec::new();
@@ -87,8 +80,7 @@ fn write_csv_has_correct_header() {
 fn write_csv_metric_names_are_sorted() {
     let text = include_str!("fixtures/tiny.toml");
     let scenario = Scenario::from_toml_str(text).expect("failed to parse tiny.toml");
-    let report = run_episode(&scenario, Policy::K8s, 1)
-        .expect("failed to run episode");
+    let report = run_episode(&scenario, Policy::K8s, 1).expect("failed to run episode");
 
     let reports = vec![report];
     let mut output = Vec::new();

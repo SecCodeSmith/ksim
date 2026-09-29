@@ -22,7 +22,7 @@ fn record_single_observation_with_two_services() {
     let demands = vec![
         ServiceDemand {
             request_rate: 100.0, // demand_rps
-            cpu_millis: 500.0,  // demand_cpu_millis = 100 rps
+            cpu_millis: 500.0,   // demand_cpu_millis = 100 rps
             memory_bytes: 0.0,
         },
         ServiceDemand {

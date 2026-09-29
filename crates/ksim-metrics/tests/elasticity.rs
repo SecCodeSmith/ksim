@@ -500,12 +500,32 @@ fn elasticity_empty_trace_returns_zero() {
     let trace = common::episode_trace(tick_duration, vec![]);
 
     // Act & Assert: all elasticity metrics return 0 for empty traces
-    assert_abs_diff_eq!(Elasticity::UnderProvisioningAccuracy.compute(&trace), 0.0, epsilon = EPSILON);
-    assert_abs_diff_eq!(Elasticity::OverProvisioningAccuracy.compute(&trace), 0.0, epsilon = EPSILON);
-    assert_abs_diff_eq!(Elasticity::UnderProvisioningTimeshare.compute(&trace), 0.0, epsilon = EPSILON);
-    assert_abs_diff_eq!(Elasticity::OverProvisioningTimeshare.compute(&trace), 0.0, epsilon = EPSILON);
+    assert_abs_diff_eq!(
+        Elasticity::UnderProvisioningAccuracy.compute(&trace),
+        0.0,
+        epsilon = EPSILON
+    );
+    assert_abs_diff_eq!(
+        Elasticity::OverProvisioningAccuracy.compute(&trace),
+        0.0,
+        epsilon = EPSILON
+    );
+    assert_abs_diff_eq!(
+        Elasticity::UnderProvisioningTimeshare.compute(&trace),
+        0.0,
+        epsilon = EPSILON
+    );
+    assert_abs_diff_eq!(
+        Elasticity::OverProvisioningTimeshare.compute(&trace),
+        0.0,
+        epsilon = EPSILON
+    );
     assert_abs_diff_eq!(Elasticity::Jitter.compute(&trace), 0.0, epsilon = EPSILON);
-    assert_abs_diff_eq!(Elasticity::Instability.compute(&trace), 0.0, epsilon = EPSILON);
+    assert_abs_diff_eq!(
+        Elasticity::Instability.compute(&trace),
+        0.0,
+        epsilon = EPSILON
+    );
 }
 
 #[test]

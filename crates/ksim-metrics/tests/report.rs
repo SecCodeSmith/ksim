@@ -3,8 +3,8 @@ mod common;
 use approx::assert_abs_diff_eq;
 use ksim_core::time::{SimDuration, SimTime};
 use ksim_metrics::{
-    metric::{standard_metrics, Slo, SloPercentile},
-    report::{evaluate, EpisodeReport},
+    metric::{Slo, SloPercentile, standard_metrics},
+    report::{EpisodeReport, evaluate},
     trace::TickSample,
 };
 use std::collections::BTreeMap;
@@ -124,17 +124,24 @@ fn episode_report_json_roundtrip() {
 
     // Act: serialize and deserialize
     let json = serde_json::to_string(&report).expect("Failed to serialize");
-    let deserialized: EpisodeReport =
-        serde_json::from_str(&json).expect("Failed to deserialize");
+    let deserialized: EpisodeReport = serde_json::from_str(&json).expect("Failed to deserialize");
 
     // Assert: values are preserved
     assert_eq!(deserialized.scenario, "test_scenario");
     assert_eq!(deserialized.policy, "test_policy");
     assert_eq!(deserialized.seed, 12345);
     assert_eq!(deserialized.metrics.len(), 3);
-    assert_abs_diff_eq!(deserialized.metrics["availability"], 0.99, epsilon = EPSILON);
+    assert_abs_diff_eq!(
+        deserialized.metrics["availability"],
+        0.99,
+        epsilon = EPSILON
+    );
     assert_abs_diff_eq!(deserialized.metrics["cost"], 15.5, epsilon = EPSILON);
-    assert_abs_diff_eq!(deserialized.metrics["mean_replicas"], 5.0, epsilon = EPSILON);
+    assert_abs_diff_eq!(
+        deserialized.metrics["mean_replicas"],
+        5.0,
+        epsilon = EPSILON
+    );
 }
 
 #[test]

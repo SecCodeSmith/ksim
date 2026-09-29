@@ -121,7 +121,10 @@ max_replicas = 10
 target_cpu_utilization = 0.6
 "#;
     let err = Scenario::from_toml_str(text).expect_err("expected error for zero tick");
-    assert!(matches!(err, ksim_bench::scenario::ScenarioError::Invalid(_)));
+    assert!(matches!(
+        err,
+        ksim_bench::scenario::ScenarioError::Invalid(_)
+    ));
 }
 
 #[test]

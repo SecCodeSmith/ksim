@@ -3,7 +3,9 @@ mod common;
 use approx::assert_abs_diff_eq;
 use ksim_core::time::{SimDuration, SimTime};
 use ksim_metrics::{
-    availability::{AvailabilityNines, ErrorBudgetBurn, LongestSloViolation, RequestAvailability, SloCompliance},
+    availability::{
+        AvailabilityNines, ErrorBudgetBurn, LongestSloViolation, RequestAvailability, SloCompliance,
+    },
     metric::{Metric, SloPercentile},
     trace::{ServiceSample, TickSample},
 };
