@@ -199,6 +199,9 @@ fn performance_override_nonexistent_service() {
 
     assert!(matches!(
         result,
-        Err(BuildError::ServiceCountMismatch { workload: 2, services: 2 })
+        Err(BuildError::ServiceCountMismatch {
+            workload: 2,
+            services: 2
+        })
     ));
 }
