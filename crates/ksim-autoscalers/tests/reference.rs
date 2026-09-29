@@ -1,4 +1,5 @@
-use ksim_autoscalers::reference::{Oracle, StaticReplicas, replicas_for_demand};
+use ksim_autoscalers::reference::{replicas_for_demand, Oracle, StaticReplicas};
+use ksim_autoscalers::traits::ReplicaRecommender;
 use ksim_core::{
     autoscaler::Autoscaler,
     ids::ServiceId,
@@ -256,4 +257,103 @@ fn oracle_act_returns_consistent_actions() {
     // Both calls should return the same actions
     assert_eq!(actions1, actions2);
     assert_eq!(actions1.replicas[0], Some(1));
+}
+
+// ============================================================================
+// ReplicaRecommender trait
+// ============================================================================
+
+#[test]
+fn static_replicas_recommend_replicas_matches_act() {
+    let static_replicas_vec = vec![6, 1];
+    let mut static_replicas = StaticReplicas::new(static_replicas_vec);
+
+    let observation = Observation {
+        now: SimTime::from_secs(0),
+        services: vec![
+            ServiceObservation {
+                desired: 1,
+                ready: 1,
+                ..Default::default()
+            },
+            ServiceObservation {
+                desired: 1,
+                ready: 1,
+                ..Default::default()
+            },
+        ],
+        ..Default::default()
+    };
+
+    let recommendation = static_replicas.recommend_replicas(&observation);
+    let actions = static_replicas.act(&observation);
+
+    assert_eq!(recommendation, actions.replicas);
+    assert_eq!(recommendation, vec![Some(6), Some(1)]);
+}
+
+#[test]
+fn oracle_recommend_replicas_matches_act_at_now_zero() {
+    let workload = Box::new(ConstantAfterTimeWorkload::new(
+        SimTime::from_secs(60),
+        100.0,
+        1000.0,
+    ));
+
+    let mut oracle = Oracle::new(
+        workload,
+        vec![500],
+        0.5,
+        SimDuration::from_secs(30),
+        SimDuration::from_secs(15),
+    );
+
+    let observation = Observation {
+        now: SimTime::from_secs(0),
+        services: vec![ServiceObservation {
+            desired: 1,
+            ready: 1,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let recommendation = oracle.recommend_replicas(&observation);
+    let actions = oracle.act(&observation);
+
+    assert_eq!(recommendation, actions.replicas);
+    assert_eq!(recommendation, vec![Some(1)]);
+}
+
+#[test]
+fn oracle_recommend_replicas_matches_act_at_now_thirty() {
+    let workload = Box::new(ConstantAfterTimeWorkload::new(
+        SimTime::from_secs(60),
+        100.0,
+        1000.0,
+    ));
+
+    let mut oracle = Oracle::new(
+        workload,
+        vec![500],
+        0.5,
+        SimDuration::from_secs(30),
+        SimDuration::from_secs(15),
+    );
+
+    let observation = Observation {
+        now: SimTime::from_secs(30),
+        services: vec![ServiceObservation {
+            desired: 1,
+            ready: 1,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+
+    let recommendation = oracle.recommend_replicas(&observation);
+    let actions = oracle.act(&observation);
+
+    assert_eq!(recommendation, actions.replicas);
+    assert_eq!(recommendation, vec![Some(4)]);
 }
