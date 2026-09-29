@@ -83,27 +83,47 @@ impl Policy {
                     .with_resources(vpa(scenario))
                     .with_nodes(cluster_autoscaler(seed)),
             ),
-            Policy::StaticPeak => Box::new(StaticReplicas::peak(
-                &demand_samples(scenario, seed),
-                &cpu_requests(scenario),
-                target_utilization(scenario),
-            )),
-            Policy::StaticAverage => Box::new(StaticReplicas::average(
-                &demand_samples(scenario, seed),
-                &cpu_requests(scenario),
-                target_utilization(scenario),
-            )),
-            Policy::Oracle => Box::new(Oracle::new(
-                scenario.workload(seed),
-                cpu_requests(scenario),
-                target_utilization(scenario),
-                SimDuration::from_millis(
-                    2 * scenario.tick().as_millis() + ORACLE_STARTUP_ALLOWANCE_MILLIS,
-                ),
-                scenario.tick(),
-            )),
+            Policy::StaticPeak => with_cluster_autoscaler(
+                Box::new(StaticReplicas::peak(
+                    &demand_samples(scenario, seed),
+                    &cpu_requests(scenario),
+                    target_utilization(scenario),
+                )),
+                seed,
+            ),
+            Policy::StaticAverage => with_cluster_autoscaler(
+                Box::new(StaticReplicas::average(
+                    &demand_samples(scenario, seed),
+                    &cpu_requests(scenario),
+                    target_utilization(scenario),
+                )),
+                seed,
+            ),
+            Policy::Oracle => with_cluster_autoscaler(
+                Box::new(Oracle::new(
+                    scenario.workload(seed),
+                    cpu_requests(scenario),
+                    target_utilization(scenario),
+                    SimDuration::from_millis(
+                        2 * scenario.tick().as_millis() + ORACLE_STARTUP_ALLOWANCE_MILLIS,
+                    ),
+                    scenario.tick(),
+                )),
+                seed,
+            ),
         }
     }
+}
+
+fn with_cluster_autoscaler(
+    replicas: Box<dyn ReplicaRecommender>,
+    seed: u64,
+) -> Box<dyn Autoscaler> {
+    Box::new(
+        KubernetesStack::new()
+            .with_replicas(replicas)
+            .with_nodes(cluster_autoscaler(seed)),
+    )
 }
 
 impl fmt::Display for Policy {

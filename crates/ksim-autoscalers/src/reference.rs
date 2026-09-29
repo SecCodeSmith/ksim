@@ -14,7 +14,8 @@ use ksim_core::{
 #[allow(
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
-    clippy::cast_sign_loss
+    clippy::cast_sign_loss,
+    reason = "replica counts are small non-negative values"
 )]
 pub fn replicas_for_demand(
     cpu_demand_millis: f64,
@@ -49,7 +50,10 @@ fn peak_of(series: &[f64]) -> f64 {
     series.iter().copied().fold(0.0, f64::max)
 }
 
-#[allow(clippy::cast_precision_loss)]
+#[allow(
+    clippy::cast_precision_loss,
+    reason = "sample counts are far below 2^52"
+)]
 fn mean_of(series: &[f64]) -> f64 {
     if series.is_empty() {
         return 0.0;
@@ -107,9 +111,8 @@ impl StaticReplicas {
 
 impl Autoscaler for StaticReplicas {
     fn act(&mut self, observation: &Observation) -> Actions {
-        let _ = observation;
         Actions {
-            replicas: self.replicas.iter().copied().map(Some).collect(),
+            replicas: self.recommend_replicas(observation),
             ..Actions::none()
         }
     }
@@ -187,28 +190,28 @@ impl Oracle {
 }
 
 impl Autoscaler for Oracle {
-    #[allow(clippy::cast_possible_truncation)]
     fn act(&mut self, observation: &Observation) -> Actions {
-        let replicas = (0..observation.services.len())
-            .map(|index| Some(self.replicas_for(ServiceId(index as u32), observation)))
-            .collect();
         Actions {
-            replicas,
+            replicas: self.recommend_replicas(observation),
             ..Actions::none()
         }
     }
 }
 
 impl ReplicaRecommender for StaticReplicas {
-    fn recommend_replicas(&mut self, observation: &Observation) -> Vec<Option<u32>> {
-        let _ = observation;
-        todo!()
+    fn recommend_replicas(&mut self, _observation: &Observation) -> Vec<Option<u32>> {
+        self.replicas.iter().copied().map(Some).collect()
     }
 }
 
 impl ReplicaRecommender for Oracle {
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "service counts are far below u32::MAX"
+    )]
     fn recommend_replicas(&mut self, observation: &Observation) -> Vec<Option<u32>> {
-        let _ = observation;
-        todo!()
+        (0..observation.services.len())
+            .map(|index| Some(self.replicas_for(ServiceId(index as u32), observation)))
+            .collect()
     }
 }
