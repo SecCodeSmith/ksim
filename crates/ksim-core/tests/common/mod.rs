@@ -59,3 +59,24 @@ impl PerformanceModel for ReadyPodsModel {
         }
     }
 }
+
+/// `PerformanceModel` that returns constant latency values.
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct ConstantLatencyModel(pub f64);
+
+impl PerformanceModel for ConstantLatencyModel {
+    fn evaluate(&self, _capacity: &ServiceCapacity, _demand: &ServiceDemand) -> ServiceSignals {
+        ServiceSignals {
+            cpu_usage_millis: 0.0,
+            memory_usage_bytes: 0.0,
+            served_rps: 0.0,
+            latency_p50_ms: self.0,
+            latency_p95_ms: self.0,
+            latency_p99_ms: self.0,
+            error_rate: 0.0,
+            throttled_fraction: 0.0,
+            oom: false,
+        }
+    }
+}
