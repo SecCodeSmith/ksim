@@ -21,4 +21,13 @@ jobs:
               --policy "$policy" --seeds 2 --out results
           done
       - run: uv run --no-sync maturin develop --release
+      - name: Convert the Alibaba 2018 fixture and replay it
+        run: |
+          uv run --no-sync python -m ksim.datasets convert --source alibaba2018 \
+            --input python/tests/fixtures/datasets/alibaba2018 \
+            --output data/alibaba2018-fixture.ksimtrace --tick 15 --split train
+          for policy in k8s oracle; do
+            ./target/release/ksim-bench run --scenario scenarios/alibaba2018_fixture.toml \
+              --policy "$policy" --seeds 2 --out results
+          done
       - run: uv run --no-sync python -m ksim.analysis results --baseline k8s >> "$GITHUB_STEP_SUMMARY"
