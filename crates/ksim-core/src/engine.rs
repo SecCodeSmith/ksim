@@ -88,6 +88,16 @@ impl SimulationBuilder {
         self
     }
 
+    /// Overrides the performance model of one service; services without an override use the
+    /// model set by [`SimulationBuilder::performance`], which may then be omitted only when
+    /// every service has an override (otherwise `build` returns `MissingPerformanceModel`).
+    /// An override for a service index that does not exist is a `ServiceCountMismatch`.
+    #[must_use]
+    pub fn performance_for(self, service: ServiceId, model: Box<dyn PerformanceModel>) -> Self {
+        let _ = (service, model);
+        todo!()
+    }
+
     #[must_use]
     pub fn scoring(mut self, policy: Box<dyn ScoringPolicy>) -> Self {
         self.scoring = Some(policy);
