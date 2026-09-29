@@ -1,0 +1,17 @@
+[package]
+name = "ksim-capi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+
+[lib]
+name = "ksim"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }

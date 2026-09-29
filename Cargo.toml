@@ -1,0 +1,41 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/ksim-core",
+    "crates/ksim-workload",
+    "crates/ksim-perf",
+    "crates/ksim-autoscalers",
+    "crates/ksim-metrics",
+    "crates/ksim-bench",
+    "crates/ksim-py",
+    "crates/ksim-capi",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license-file = "LICENCE"
+repository = "https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler"
+
+[workspace.dependencies]
+ksim-core = { path = "crates/ksim-core" }
+ksim-workload = { path = "crates/ksim-workload" }
+ksim-perf = { path = "crates/ksim-perf" }
+ksim-autoscalers = { path = "crates/ksim-autoscalers" }
+ksim-metrics = { path = "crates/ksim-metrics" }
+clap = { version = "4.6.7", features = ["derive"] }
+pyo3 = { version = "0.29.2", features = ["abi3-py312"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
