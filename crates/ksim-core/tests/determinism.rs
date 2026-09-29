@@ -1,5 +1,6 @@
 mod common;
 
+use common::{FixedDemand, ReadyPodsModel};
 use ksim_core::{
     actions::Actions,
     cluster::{NodePoolSpec, ServiceSpec},
@@ -8,7 +9,6 @@ use ksim_core::{
     time::SimDuration,
     workload::ServiceDemand,
 };
-use common::{FixedDemand, ReadyPodsModel};
 
 #[test]
 fn identical_seed_and_latencies_produce_identical_observations() {

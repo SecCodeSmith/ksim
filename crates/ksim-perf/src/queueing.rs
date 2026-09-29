@@ -21,10 +21,11 @@ pub fn mmc_wait_quantile(servers: u32, lambda: f64, mu: f64, p: f64) -> f64 {
 
 /// Each ready pod serves `mu = limits.cpu_millis / cpu_millis_per_request` requests per second.
 /// Waits follow M/M/c scaled by the Allen-Cunneen factor `(ca2 + cs2) / 2`; latency quantile =
-/// scaled wait quantile + `1 / mu`. Arrivals above capacity (`lambda >= c * mu`) are dropped
-/// down to 99% utilisation and counted as errors, and served requests whose latency quantile
-/// exceeds `timeout_ms` count as errors too. No ready pods: every request errors, latencies
-/// equal `timeout_ms`.
+/// scaled wait quantile + `1 / mu`, each capped at `timeout_ms`. Arrivals above 99% utilisation
+/// are dropped and counted as errors; of the served requests, the fraction whose response
+/// exceeds the timeout, `C * exp(-(c*mu - lambda) * (timeout - 1/mu) / k)` with
+/// `k = (ca2 + cs2) / 2`, times out and counts as errors too. `served_rps` is the admitted
+/// rate. No ready pods: every request errors, latencies equal `timeout_ms`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct QueueingModel {
     pub cpu_millis_per_request: f64,

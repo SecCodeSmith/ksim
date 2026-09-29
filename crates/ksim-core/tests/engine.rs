@@ -1,5 +1,6 @@
 mod common;
 
+use common::{FixedDemand, ReadyPodsModel};
 use ksim_core::{
     actions::Actions,
     cluster::{NodePoolSpec, PodPhase, ServiceSpec},
@@ -11,7 +12,6 @@ use ksim_core::{
     time::{SimDuration, SimTime},
     workload::ServiceDemand,
 };
-use common::{FixedDemand, ReadyPodsModel};
 
 #[test]
 fn build_error_missing_workload() {
@@ -468,7 +468,9 @@ fn requests_action_applies_to_new_pods_only() {
 
     let mut actions = Actions::none();
     actions.replicas.push(Some(2));
-    actions.requests.push(Some(Resources::new(200, 256 * 1024 * 1024)));
+    actions
+        .requests
+        .push(Some(Resources::new(200, 256 * 1024 * 1024)));
     sim.step(&actions);
 
     let cluster = sim.cluster();

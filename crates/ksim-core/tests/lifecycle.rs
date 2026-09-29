@@ -1,5 +1,5 @@
 use ksim_core::{
-    lifecycle::{crash_loop_backoff, DefaultLatencies, FixedLatencies, LatencyModel},
+    lifecycle::{DefaultLatencies, FixedLatencies, LatencyModel, crash_loop_backoff},
     rng::{Concern, RngStreams},
     time::SimDuration,
 };

@@ -1,4 +1,4 @@
-use ksim_core::resources::{Resources, GIB, MIB};
+use ksim_core::resources::{GIB, MIB, Resources};
 
 #[test]
 fn fits_in_cpu_and_memory_both_fit() {

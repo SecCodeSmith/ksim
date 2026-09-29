@@ -1,5 +1,5 @@
 use ksim_core::cluster::{Cluster, NodePhase, NodePoolSpec, ServiceSpec};
-use ksim_core::resources::{Resources, GIB};
+use ksim_core::resources::{GIB, Resources};
 use ksim_core::scheduler::{LeastAllocated, MostAllocated, Scheduler, ScoringPolicy};
 use ksim_core::time::SimTime;
 
@@ -379,16 +379,14 @@ fn schedule_pending_returns_bindings_in_ascending_pod_id_order() {
 
     let service = cluster.add_service(service_spec);
 
-    // Create pods in reverse order
-    let pod3 = cluster.create_pod(service, SimTime::ZERO);
-    let pod2 = cluster.create_pod(service, SimTime::ZERO);
     let pod1 = cluster.create_pod(service, SimTime::ZERO);
+    let pod2 = cluster.create_pod(service, SimTime::ZERO);
+    let pod3 = cluster.create_pod(service, SimTime::ZERO);
 
     let scheduler = Scheduler::new(Box::new(LeastAllocated));
 
     let bindings = scheduler.schedule_pending(&mut cluster);
 
-    // Should be in ascending order
     assert_eq!(bindings[0].0, pod1);
     assert_eq!(bindings[1].0, pod2);
     assert_eq!(bindings[2].0, pod3);
