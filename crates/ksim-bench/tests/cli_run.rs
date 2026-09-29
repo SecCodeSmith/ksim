@@ -34,14 +34,11 @@ fn list_policies_prints_all_eight_names() {
 
 #[test]
 fn run_scenario_with_hpa_policy_succeeds() {
-    let temp_dir = std::env::temp_dir().join(format!(
-        "ksim_bench_test_{}",
-        std::process::id()
-    ));
+    let temp_dir = std::env::temp_dir().join(format!("ksim_bench_test_{}", std::process::id()));
     fs::create_dir_all(&temp_dir).expect("Failed to create temp dir");
 
-    let scenario_path = std::path::absolute("crates/ksim-bench/tests/fixtures/tiny.toml")
-        .expect("Failed to resolve scenario path");
+    let scenario_path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tiny.toml");
 
     let output = Command::new(env!("CARGO_BIN_EXE_ksim-bench"))
         .arg("run")
@@ -68,8 +65,7 @@ fn run_scenario_with_hpa_policy_succeeds() {
     let csv_path = temp_dir.join("tiny-hpa.csv");
     assert!(csv_path.exists(), "tiny-hpa.csv should exist");
 
-    let jsonl_content =
-        fs::read_to_string(&jsonl_path).expect("Failed to read jsonl file");
+    let jsonl_content = fs::read_to_string(&jsonl_path).expect("Failed to read jsonl file");
     let jsonl_lines = jsonl_content.lines().count();
     assert_eq!(jsonl_lines, 2, "jsonl should have 2 lines");
 
@@ -78,14 +74,12 @@ fn run_scenario_with_hpa_policy_succeeds() {
 
 #[test]
 fn run_with_bad_policy_exits_nonzero() {
-    let temp_dir = std::env::temp_dir().join(format!(
-        "ksim_bench_test_bad_policy_{}",
-        std::process::id()
-    ));
+    let temp_dir =
+        std::env::temp_dir().join(format!("ksim_bench_test_bad_policy_{}", std::process::id()));
     fs::create_dir_all(&temp_dir).expect("Failed to create temp dir");
 
-    let scenario_path = std::path::absolute("crates/ksim-bench/tests/fixtures/tiny.toml")
-        .expect("Failed to resolve scenario path");
+    let scenario_path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tiny.toml");
 
     let output = Command::new(env!("CARGO_BIN_EXE_ksim-bench"))
         .arg("run")
