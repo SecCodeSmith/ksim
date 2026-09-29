@@ -1,5 +1,9 @@
 use crate::{metric::Metric, trace::EpisodeTrace};
 
+fn tick_hours(trace: &EpisodeTrace) -> f64 {
+    trace.tick.as_secs_f64() / 3600.0
+}
+
 /// `Σ hourly_cost * tick_hours`. Name `cost`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Cost;
@@ -19,8 +23,7 @@ impl Metric for Cost {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = trace;
-        todo!()
+        trace.ticks.iter().map(|tick| tick.hourly_cost).sum::<f64>() * tick_hours(trace)
     }
 }
 
@@ -30,8 +33,12 @@ impl Metric for NodeHours {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = trace;
-        todo!()
+        trace
+            .ticks
+            .iter()
+            .map(|tick| f64::from(tick.nodes))
+            .sum::<f64>()
+            * tick_hours(trace)
     }
 }
 
@@ -41,7 +48,12 @@ impl Metric for CpuRequestUtilization {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = trace;
-        todo!()
+        let samples = || trace.ticks.iter().flat_map(|tick| &tick.services);
+        let supply: f64 = samples().map(|sample| sample.supply_cpu_millis).sum();
+        if supply > 0.0 {
+            samples().map(|sample| sample.cpu_usage_millis).sum::<f64>() / supply
+        } else {
+            0.0
+        }
     }
 }

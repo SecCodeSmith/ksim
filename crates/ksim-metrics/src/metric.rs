@@ -2,7 +2,15 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::trace::EpisodeTrace;
+use crate::{
+    availability::{
+        AvailabilityNines, ErrorBudgetBurn, LongestSloViolation, RequestAvailability, SloCompliance,
+    },
+    cost::{Cost, CpuRequestUtilization, NodeHours},
+    elasticity::ELASTICITY_METRICS,
+    operational::OPERATIONAL_METRICS,
+    trace::EpisodeTrace,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SloPercentile {
@@ -28,6 +36,17 @@ pub trait Metric: Debug + Send {
 /// Every metric of the benchmark protocol, in report order.
 #[must_use]
 pub fn standard_metrics(slo: Slo) -> Vec<Box<dyn Metric>> {
-    let _ = slo;
-    todo!()
+    let mut metrics: Vec<Box<dyn Metric>> = vec![
+        Box::new(RequestAvailability),
+        Box::new(SloCompliance { slo }),
+        Box::new(AvailabilityNines),
+        Box::new(ErrorBudgetBurn { slo }),
+        Box::new(LongestSloViolation { slo }),
+    ];
+    metrics.extend(ELASTICITY_METRICS.map(|variant| Box::new(variant) as Box<dyn Metric>));
+    metrics.push(Box::new(Cost));
+    metrics.push(Box::new(NodeHours));
+    metrics.push(Box::new(CpuRequestUtilization));
+    metrics.extend(OPERATIONAL_METRICS.map(|variant| Box::new(variant) as Box<dyn Metric>));
+    metrics
 }

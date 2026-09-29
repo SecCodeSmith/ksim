@@ -15,6 +15,8 @@ pub struct EpisodeReport {
 /// Computes every metric on the trace, keyed by `Metric::name`.
 #[must_use]
 pub fn evaluate(trace: &EpisodeTrace, metrics: &[Box<dyn Metric>]) -> BTreeMap<String, f64> {
-    let _ = (trace, metrics);
-    todo!()
+    metrics
+        .iter()
+        .map(|metric| (metric.name().to_owned(), metric.compute(trace)))
+        .collect()
 }

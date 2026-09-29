@@ -1,4 +1,36 @@
-use crate::{metric::Metric, metric::Slo, trace::EpisodeTrace};
+use crate::numeric::count_f64;
+use crate::{
+    metric::{Metric, Slo, SloPercentile},
+    trace::{EpisodeTrace, ServiceSample},
+};
+
+const MAX_NINES: f64 = 9.0;
+
+fn samples(trace: &EpisodeTrace) -> impl Iterator<Item = &ServiceSample> {
+    trace.ticks.iter().flat_map(|tick| &tick.services)
+}
+
+fn request_availability(trace: &EpisodeTrace) -> f64 {
+    let demand: f64 = samples(trace).map(|sample| sample.demand_rps).sum();
+    if demand <= 0.0 {
+        return 1.0;
+    }
+    let good: f64 = samples(trace)
+        .map(|sample| sample.demand_rps * (1.0 - sample.error_rate))
+        .sum();
+    good / demand
+}
+
+fn violates(slo: &Slo, sample: &ServiceSample) -> bool {
+    if sample.demand_rps <= 0.0 {
+        return false;
+    }
+    let latency = match slo.percentile {
+        SloPercentile::P95 => sample.latency_p95_ms,
+        SloPercentile::P99 => sample.latency_p99_ms,
+    };
+    latency > slo.latency_ms || sample.error_rate > slo.max_error_rate
+}
 
 /// Request availability (Beyer et al., *Site Reliability Engineering*, 2016): good requests
 /// over valid requests, `Σ demand_rps * (1 - error_rate) / Σ demand_rps` over all ticks and
@@ -38,8 +70,7 @@ impl Metric for RequestAvailability {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = trace;
-        todo!()
+        request_availability(trace)
     }
 }
 
@@ -49,8 +80,14 @@ impl Metric for SloCompliance {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = (trace, self.slo);
-        todo!()
+        let total = samples(trace).count();
+        if total == 0 {
+            return 1.0;
+        }
+        let compliant = samples(trace)
+            .filter(|sample| !violates(&self.slo, sample))
+            .count();
+        count_f64(compliant) / count_f64(total)
     }
 }
 
@@ -60,8 +97,12 @@ impl Metric for AvailabilityNines {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = trace;
-        todo!()
+        let unavailability = 1.0 - request_availability(trace);
+        if unavailability <= 0.0 {
+            MAX_NINES
+        } else {
+            (-unavailability.log10()).min(MAX_NINES)
+        }
     }
 }
 
@@ -71,8 +112,15 @@ impl Metric for ErrorBudgetBurn {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = (trace, self.slo);
-        todo!()
+        let budget = 1.0 - self.slo.availability_target;
+        let consumed = 1.0 - request_availability(trace);
+        if budget > 0.0 {
+            consumed / budget
+        } else if consumed > 0.0 {
+            f64::INFINITY
+        } else {
+            0.0
+        }
     }
 }
 
@@ -82,7 +130,20 @@ impl Metric for LongestSloViolation {
     }
 
     fn compute(&self, trace: &EpisodeTrace) -> f64 {
-        let _ = (trace, self.slo);
-        todo!()
+        let mut longest = 0_u32;
+        let mut current = 0_u32;
+        for tick in &trace.ticks {
+            if tick
+                .services
+                .iter()
+                .any(|sample| violates(&self.slo, sample))
+            {
+                current += 1;
+                longest = longest.max(current);
+            } else {
+                current = 0;
+            }
+        }
+        f64::from(longest) * trace.tick.as_secs_f64()
     }
 }

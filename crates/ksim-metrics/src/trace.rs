@@ -1,3 +1,4 @@
+use crate::numeric::quantity_f64;
 use ksim_core::{
     actions::Actions, observation::Observation, time::SimDuration, time::SimTime,
     workload::ServiceDemand,
@@ -68,12 +69,84 @@ impl TraceRecorder {
         actions: &Actions,
         demands: &[ServiceDemand],
     ) {
-        let _ = (observation, actions, demands, &self.pool_prices);
-        todo!()
+        let tick = TickSample {
+            time: observation.now,
+            services: service_samples(observation, demands),
+            nodes: count(observation.nodes.len()),
+            hourly_cost: self.hourly_cost(observation),
+            replica_changes: replica_changes(observation, actions),
+            evictions: actions.evict.iter().sum(),
+            node_changes: node_changes(actions),
+        };
+        self.trace.ticks.push(tick);
+    }
+
+    fn hourly_cost(&self, observation: &Observation) -> f64 {
+        observation
+            .nodes
+            .iter()
+            .map(|node| {
+                self.pool_prices
+                    .get(node.pool.0 as usize)
+                    .copied()
+                    .unwrap_or(0.0)
+            })
+            .sum()
     }
 
     #[must_use]
     pub fn finish(self) -> EpisodeTrace {
         self.trace
     }
+}
+
+fn count(len: usize) -> u32 {
+    u32::try_from(len).unwrap_or(u32::MAX)
+}
+
+fn service_samples(observation: &Observation, demands: &[ServiceDemand]) -> Vec<ServiceSample> {
+    observation
+        .services
+        .iter()
+        .enumerate()
+        .map(|(index, service)| {
+            let demand = demands.get(index).copied().unwrap_or_default();
+            let signals = &service.signals;
+            ServiceSample {
+                demand_rps: demand.request_rate,
+                demand_cpu_millis: demand.cpu_millis,
+                supply_cpu_millis: f64::from(service.ready)
+                    * quantity_f64(service.requests.cpu_millis),
+                cpu_usage_millis: signals.cpu_usage_millis,
+                served_rps: signals.served_rps,
+                error_rate: signals.error_rate,
+                latency_p50_ms: signals.latency_p50_ms,
+                latency_p95_ms: signals.latency_p95_ms,
+                latency_p99_ms: signals.latency_p99_ms,
+                desired: service.desired,
+                ready: service.ready,
+                pending: service.pending,
+                oom: signals.oom,
+            }
+        })
+        .collect()
+}
+
+fn replica_changes(observation: &Observation, actions: &Actions) -> u32 {
+    let changed = actions
+        .replicas
+        .iter()
+        .zip(&observation.services)
+        .filter(|(target, service)| target.is_some_and(|replicas| replicas != service.desired))
+        .count();
+    count(changed)
+}
+
+fn node_changes(actions: &Actions) -> u32 {
+    let scaled: u32 = actions
+        .pool_delta
+        .iter()
+        .map(|delta| delta.unsigned_abs())
+        .sum();
+    scaled + count(actions.drain.len())
 }
