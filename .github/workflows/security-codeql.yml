@@ -6,7 +6,7 @@ on:
     - cron: '23 5 * * 2'
 concurrency:
   group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
