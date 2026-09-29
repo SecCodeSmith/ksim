@@ -18,7 +18,7 @@ Every wiki page marks content as **Implemented** (exists in the repository now) 
 | GitHub Actions pipelines, Docker/Podman images on GHCR | Implemented |
 | Simulation core, perf model | Implemented (Milestone 2) |
 | HPA / VPA / CA baselines, `KubernetesStack` | Implemented (Milestone 3) |
-| Metrics and `ksim-bench run` | Planned (Milestone 4) |
+| Metrics (`ksim-metrics`), `ksim-bench run`, `ksim.analysis` leaderboard | Implemented (Milestone 4) |
 | Dataset normalizers, `.ksimtrace` | Planned (Milestone 5) |
 | Gymnasium env, vector env, PPO example | Planned (Milestone 6) |
 | Calibration against a real `kind` cluster | Planned (Milestone 7) |

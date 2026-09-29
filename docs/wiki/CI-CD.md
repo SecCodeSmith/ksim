@@ -31,6 +31,8 @@ Every workflow file stays at 60 lines or fewer.
 | `security-codeql.yml` | push, PR, weekly | CodeQL for Rust and Python |
 | `security-secrets.yml` | push, PR | gitleaks |
 | `dependency-review.yml` | PR | GitHub dependency review |
+| `perf.yml` | push, PR | release-mode `ksim-core` throughput gate (`cargo test --release -p ksim-core --test perf -- --ignored`) |
+| `bench-smoke.yml` | push, PR | builds `ksim-bench`, runs `synthetic_steady` for `k8s` and `oracle` (2 seeds), writes the `ksim.analysis` leaderboard to the job summary |
 | `container-check.yml` | PR touching container or source files | `_build-image-docker` and `_build-image-podman` (no push) + Trivy scan |
 
 ## Nightly chain
