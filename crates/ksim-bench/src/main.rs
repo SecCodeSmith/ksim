@@ -70,9 +70,7 @@ fn run(
     out: &Path,
 ) -> anyhow::Result<()> {
     let policy: Policy = policy.parse()?;
-    let text = fs::read_to_string(scenario_path)
-        .with_context(|| format!("reading {}", scenario_path.display()))?;
-    let scenario = Scenario::from_toml_str(&text)?;
+    let scenario = Scenario::from_toml_file(scenario_path)?;
     let reports = run_seeds(&scenario, policy, first_seed, seeds)?;
     fs::create_dir_all(out).with_context(|| format!("creating {}", out.display()))?;
     let stem = format!("{}-{policy}", scenario.name);
