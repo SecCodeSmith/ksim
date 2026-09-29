@@ -131,11 +131,15 @@ impl Cluster {
         self.nodes[node.index()].map(|record| record.phase)
     }
 
+    /// # Panics
+    /// If the node has been removed; check [`Cluster::node_phase`] first for tombstoned ids.
     #[must_use]
     pub fn node_pool(&self, node: NodeId) -> PoolId {
         self.node_record(node).pool
     }
 
+    /// # Panics
+    /// If the node has been removed; check [`Cluster::node_phase`] first for tombstoned ids.
     #[must_use]
     pub fn node_allocatable(&self, node: NodeId) -> Resources {
         self.pool_spec(self.node_pool(node)).allocatable
