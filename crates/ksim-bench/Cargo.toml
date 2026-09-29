@@ -9,7 +9,21 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+anyhow = "1.0.104"
 clap.workspace = true
+csv.workspace = true
+ksim-autoscalers.workspace = true
+ksim-core.workspace = true
+ksim-metrics.workspace = true
+ksim-perf.workspace = true
+ksim-workload.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror = "2.0.21"
+toml.workspace = true
+
+[dev-dependencies]
+approx.workspace = true
 
 [lints]
 workspace = true
