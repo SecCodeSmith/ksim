@@ -13,7 +13,7 @@ Tags: `nightly`, `nightly-YYYYMMDD`, `X.Y.Z`, `latest`. Images carry OCI labels,
 
 ## Build
 
-One multi-stage `Containerfile` (also available as `Dockerfile`): a Rust builder stage on the pinned latest stable `rust` image, then a distroless or `debian-slim` runtime; a second target `ksim-train`.
+One multi-stage `Containerfile` (also available as `Dockerfile`), Debian 13 (trixie) in every stage. The Rust builder on the pinned `rust:<version>-slim-trixie` image links `ksim-bench` fully statically (`-C target-feature=+crt-static`, built for the host target so build scripts are unaffected). The runtime is `gcr.io/distroless/static-debian13:nonroot`, which has no libc and no OpenSSL, so glibc or libssl CVEs cannot reach it and nothing in it needs patching. The second target `ksim-train` is `python:3.13-slim-trixie` with the `ksim` wheel built on trixie.
 
 ```sh
 docker build --target runtime -t ksim .
