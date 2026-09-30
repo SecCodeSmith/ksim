@@ -11,7 +11,8 @@ OBSERVATION_HIGH: float
 class KsimEnv:
     """One simulated cluster over `ksim_env::Env` (see the Rust docs for the observation and
     action layout). Errors from the environment (bad scenario, wrong action length or value,
-    step before reset or after truncation) raise ValueError. Stepping releases the GIL."""
+    step before reset or after truncation) raise ValueError. Stepping releases the GIL, but
+    instances are not thread-safe: use them from the thread that created them."""
 
     def __init__(
         self,
@@ -33,11 +34,13 @@ class KsimEnv:
         self, action: npt.NDArray[np.uint32]
     ) -> tuple[npt.NDArray[np.float32], float, bool, bool]:
         """Returns (observation, reward, terminated, truncated)."""
-    def episode_metrics(self) -> dict[str, float]: ...
+    def episode_metrics(self) -> dict[str, float]:
+        """Metrics of the ticks since the last reset; empty before the first reset."""
 
 class KsimVectorEnv:
     """`num_envs` environments stepped in parallel with Gymnasium `NEXT_STEP` autoreset;
-    observations are (num_envs, observation_len), actions (num_envs, len(action_nvec))."""
+    observations are (num_envs, observation_len), actions (num_envs, len(action_nvec)).
+    Instances are not thread-safe: use them from the thread that created them."""
 
     def __init__(
         self,
