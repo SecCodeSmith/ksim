@@ -9,9 +9,14 @@ use crate::{
     layout::EnvConfig,
 };
 
-/// `num_envs` independent `Env`s stepped in parallel (rayon) into caller-provided buffers laid
-/// out env-major: observations `num_envs * observation_len`, actions
-/// `num_envs * action_nvec.len()`, rewards/terminated/truncated `num_envs`.
+/// `num_envs` independent `Env`s stepped into caller-provided buffers laid out env-major:
+/// observations `num_envs * observation_len`, actions `num_envs * action_nvec.len()`,
+/// rewards/terminated/truncated `num_envs`.
+///
+/// A step runs the envs on the calling thread when the previous step's measured serial cost
+/// (its per-env step time times `num_envs`) is below `PARALLEL_THRESHOLD`, and in parallel
+/// with rayon otherwise: small scenarios step in about a microsecond, far less than waking
+/// the thread pool. The schedule changes only speed; results are identical either way.
 ///
 /// Autoreset follows Gymnasium's `NEXT_STEP` mode: the step after an env reports
 /// `truncated` (or `terminated`) resets that env instead of stepping it, ignores its action,
