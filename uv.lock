@@ -1212,6 +1212,7 @@ train = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "gymnasium" },
     { name = "hypothesis" },
     { name = "maturin" },
     { name = "mypy" },
@@ -1244,6 +1245,7 @@ provides-extras = ["analysis", "borg", "datasets", "gym", "train"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "gymnasium", specifier = ">=1.3.0" },
     { name = "hypothesis", specifier = ">=6.168.3" },
     { name = "maturin", specifier = ">=1.15.0" },
     { name = "mypy", specifier = ">=2.3.1" },

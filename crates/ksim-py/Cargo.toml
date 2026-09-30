@@ -12,6 +12,9 @@ name = "_native"
 crate-type = ["cdylib"]
 
 [dependencies]
+ksim-bench.workspace = true
+ksim-env.workspace = true
+numpy.workspace = true
 pyo3.workspace = true
 
 [lints]
