@@ -191,14 +191,16 @@ fn next_step_autoreset_after_truncation() {
     let mut terminated = vec![false; 1];
     let mut truncated = vec![false; 1];
 
-    for _ in 0..=episode_steps {
-        let _ = vec_env.step(
-            &action,
-            &mut obs,
-            &mut rewards,
-            &mut terminated,
-            &mut truncated,
-        );
+    for _ in 0..episode_steps {
+        vec_env
+            .step(
+                &action,
+                &mut obs,
+                &mut rewards,
+                &mut terminated,
+                &mut truncated,
+            )
+            .unwrap();
     }
 
     assert!(truncated[0]);

@@ -251,13 +251,13 @@ fn decode_pool_delta_with_replicas_and_nodes() {
 
     let obs = Observation {
         now: SimTime::from_secs(0),
-        services: vec![ServiceObservation::default()],
+        services: vec![ServiceObservation::default(); 2],
         pools: vec![PoolObservation::default()],
         nodes: vec![],
         node_pods: vec![],
     };
 
-    let action = vec![3, 2];
+    let action = vec![3, 3, 2];
     let actions = decode(&action, &obs, &layout);
 
     assert_eq!(actions.pool_delta.len(), 1);

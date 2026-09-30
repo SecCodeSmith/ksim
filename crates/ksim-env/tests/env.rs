@@ -115,12 +115,9 @@ fn truncated_at_episode_steps() {
     let action = vec![3; env.layout().action_nvec().len()];
     let episode_steps = env.episode_steps();
 
-    for step in 0..episode_steps {
+    for _ in 1..episode_steps {
         let outcome = env.step(&action, &mut obs).unwrap();
-
-        if step < episode_steps - 1 {
-            assert!(!outcome.truncated);
-        }
+        assert!(!outcome.truncated);
     }
 
     let outcome = env.step(&action, &mut obs).unwrap();
@@ -139,7 +136,7 @@ fn never_terminated() {
     let action = vec![3; env.layout().action_nvec().len()];
     let episode_steps = env.episode_steps();
 
-    for _ in 0..=episode_steps {
+    for _ in 0..episode_steps {
         let outcome = env.step(&action, &mut obs).unwrap();
         assert!(!outcome.terminated);
     }
