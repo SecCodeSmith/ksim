@@ -41,6 +41,10 @@ class EnvOptions:
     service_slots: int | None = None
     reward_weights: tuple[float, float, float] = (1.0, 0.5, 0.01)
 
+    @staticmethod
+    def kwargs(options: "EnvOptions | None") -> dict[str, Any]:
+        return asdict(options or EnvOptions())
+
 
 SEED_BOUND = 2**63 - 1
 
@@ -75,7 +79,7 @@ class KsimGymEnv(gymnasium.Env[Observation, Action]):
     metadata: dict[str, Any] = {"render_modes": []}  # noqa: RUF012
 
     def __init__(self, scenario: str | Path, options: EnvOptions | None = None) -> None:
-        self._native = _native.KsimEnv(str(scenario), **asdict(options or EnvOptions()))
+        self._native = _native.KsimEnv(str(scenario), **EnvOptions.kwargs(options))
         self.observation_space = _observation_space(self._native.observation_len)
         self.action_space = _action_space(self._native.action_nvec)
 
@@ -104,9 +108,7 @@ class KsimVectorGymEnv(gymnasium.vector.VectorEnv[Observation, Action, npt.NDArr
     def __init__(
         self, scenario: str | Path, num_envs: int, options: EnvOptions | None = None
     ) -> None:
-        self._native = _native.KsimVectorEnv(
-            str(scenario), num_envs, **asdict(options or EnvOptions())
-        )
+        self._native = _native.KsimVectorEnv(str(scenario), num_envs, **EnvOptions.kwargs(options))
         self.num_envs = num_envs
         self.single_observation_space = _observation_space(self._native.observation_len)
         self.single_action_space = _action_space(self._native.action_nvec)

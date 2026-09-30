@@ -11,7 +11,6 @@ seed drawn by Gymnasium), stepping `policy(observation)` until truncation; the r
 import json
 import tomllib
 from collections.abc import Callable, Sequence
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +35,7 @@ def evaluate(
     if len(seeds) == 0:
         raise ValueError("evaluate needs at least one seed")
     name = _scenario_name(scenario)
-    env = _native.KsimEnv(str(scenario), **asdict(options or EnvOptions()))
+    env = _native.KsimEnv(str(scenario), **EnvOptions.kwargs(options))
     return [
         {
             "scenario": name,
