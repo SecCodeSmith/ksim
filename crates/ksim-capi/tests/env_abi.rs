@@ -135,20 +135,11 @@ fn ksim_env_action_nvec_fills_correct_entries() {
         let env = ksim::env::ksim_env_new(path.as_ptr(), 3);
         assert!(!env.is_null());
         let action_len = ksim::env::ksim_env_action_len(env);
-        // action_nvec should fill 2*k+1 entries where k = max_replica_step = 3
-        // 2*3+1 = 7 entries
-        assert_eq!(action_len, 7, "action_len should be 2*k+1 = 7 for k=3");
+        assert_eq!(action_len, 2);
         let mut out = vec![0u32; action_len];
         let result = ksim::env::ksim_env_action_nvec(env, out.as_mut_ptr(), action_len);
-        assert_eq!(
-            result,
-            ksim::env::KSIM_OK,
-            "action_nvec with correct length should return KSIM_OK"
-        );
-        assert!(
-            out.iter().all(|&x| x > 0),
-            "all action_nvec entries should be > 0"
-        );
+        assert_eq!(result, ksim::env::KSIM_OK);
+        assert_eq!(out, vec![7, 7]);
         ksim::env::ksim_env_free(env);
     }
 }
