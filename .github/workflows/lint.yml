@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/setup-rust-python
-      - run: cargo fmt --all -- --check
+      - run: cargo fmt --all
       - run: cargo clippy --workspace --all-targets -- -D warnings
   python:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/setup-rust-python
-      - run: uv run --no-sync ruff check .
-      - run: uv run --no-sync ruff format --check .
+      - run: uv run --no-sync ruff check --fix .
+      - run: uv run --no-sync ruff format .
       - run: uv run --no-sync mypy

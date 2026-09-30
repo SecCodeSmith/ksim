@@ -24,7 +24,7 @@ Every workflow file stays at 60 lines or fewer.
 
 | Workflow | Trigger | Content |
 |---|---|---|
-| `lint.yml` | push, PR | fmt, clippy `-D warnings`, ruff, mypy |
+| `lint.yml` | push, PR | runs `cargo fmt`, `ruff check --fix`, `ruff format`, clippy `-D warnings`, mypy |
 | `test.yml` | push, PR | Rust (nextest + doc tests) and Python (maturin + pytest) |
 | `coverage.yml` | push, PR | llvm-cov + pytest-cov, threshold gate |
 | `security-deps.yml` | push, PR, weekly | cargo-deny, cargo-audit, pip-audit |
