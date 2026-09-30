@@ -1,0 +1,36 @@
+name = "alibaba2018_fixture"
+duration_s = 600
+tick_s = 15
+
+[slo]
+latency_ms = 250.0
+percentile = "P95"
+max_error_rate = 0.01
+availability_target = 0.999
+
+[trace]
+path = "../data/alibaba2018-fixture.ksimtrace"
+wrap = true
+
+[[pools]]
+name = "default"
+cpu_millis = 8000
+memory_mib = 32768
+min_nodes = 1
+max_nodes = 10
+initial_nodes = 2
+price_per_hour = 0.3
+
+[[services]]
+name = "app1"
+requests_cpu_millis = 500
+requests_memory_mib = 512
+limits_cpu_millis = 1000
+limits_memory_mib = 1024
+initial_replicas = 2
+cpu_millis_per_request = 50.0
+memory_base_mib = 256.0
+memory_mib_per_rps = 0.0
+curve = { kind = "trace", service = "app1" }
+performance = { kind = "queueing", cpu_millis_per_request = 50.0, timeout_ms = 10000.0, ca2 = 1.0, cs2 = 1.0 }
+hpa = { min_replicas = 1, max_replicas = 10, target_cpu_utilization = 0.6 }

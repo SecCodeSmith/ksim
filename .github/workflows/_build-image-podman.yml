@@ -1,0 +1,53 @@
+name: _build-image-podman
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ''
+      image:
+        type: string
+        required: true
+      target:
+        type: string
+        default: runtime
+      push:
+        type: boolean
+        default: false
+      tags:
+        type: string
+        default: check
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: ${{ inputs.image }}
+      TAGS: ${{ inputs.tags }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+      - if: inputs.push
+        run: echo "$PASSWORD" | podman login ghcr.io -u "$USERNAME" --password-stdin
+        env:
+          USERNAME: ${{ github.actor }}
+          PASSWORD: ${{ github.token }}
+      - env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          args=()
+          while read -r tag; do [ -n "$tag" ] && args+=(-t "$IMAGE:$tag"); done <<< "$TAGS"
+          podman build --target "$TARGET" -f Containerfile "${args[@]}" .
+      - if: inputs.push
+        run: |
+          while read -r tag; do [ -n "$tag" ] && podman push "$IMAGE:$tag"; done <<< "$TAGS"
+      - if: '!inputs.push'
+        run: |
+          first="$(head -n1 <<< "$TAGS")"
+          podman save --format docker-archive -o "$RUNNER_TEMP/image.tar" "$IMAGE:$first"
+      - if: '!inputs.push'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: image-podman-${{ inputs.target }}
+          path: ${{ runner.temp }}/image.tar
+          retention-days: 1

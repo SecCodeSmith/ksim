@@ -1,0 +1,6 @@
+timestamp,msname,msinstanceid,metric,value
+0,web,i1,providerRPC_MCR,100
+0,web,i1,HTTP_MCR,50
+0,db,i2,providerRPC_MCR,30
+60000,web,i1,providerRPC_MCR,120
+60000,web,i1,HTTP_MCR,60

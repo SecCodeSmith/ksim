@@ -1,0 +1,5 @@
+start_time,collection_id,instance_index,average_usage_cpus,average_usage_memory
+0,coll1,0,0.5,0.4
+0,coll1,1,0.3,0.2
+1000000,coll1,0,0.6,0.45
+1000000,coll1,1,0.35,0.25

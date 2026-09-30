@@ -1,0 +1,47 @@
+name = "tiny"
+duration_s = 600
+tick_s = 15
+
+[slo]
+latency_ms = 250.0
+percentile = "P95"
+max_error_rate = 0.01
+availability_target = 0.999
+
+[[pools]]
+name = "default"
+cpu_millis = 4000
+memory_mib = 16384
+min_nodes = 1
+max_nodes = 5
+initial_nodes = 1
+price_per_hour = 0.2
+
+[[services]]
+name = "web"
+requests_cpu_millis = 500
+requests_memory_mib = 512
+limits_cpu_millis = 1000
+limits_memory_mib = 1024
+initial_replicas = 2
+cpu_millis_per_request = 50.0
+memory_base_mib = 256.0
+memory_mib_per_rps = 0.0
+
+[services.curve]
+kind = "step"
+before = 5.0
+after = 40.0
+at_s = 300
+
+[services.performance]
+kind = "queueing"
+cpu_millis_per_request = 50.0
+timeout_ms = 10000.0
+ca2 = 1.0
+cs2 = 1.0
+
+[services.hpa]
+min_replicas = 1
+max_replicas = 10
+target_cpu_utilization = 0.6

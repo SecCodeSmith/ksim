@@ -1,0 +1,38 @@
+name: security-codeql
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 5 * * 2'
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [rust, python, actions]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: github/codeql-action/init@v4.38.2
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v4.38.2
+        with:
+          category: /language:${{ matrix.language }}
+          upload: never
+          output: sarif-results
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: codeql-${{ matrix.language }}
+          path: sarif-results
+      - name: Fail on error-level findings
+        run: PYTHONPATH=tools/ci python3 -m ksim_ci.sarif_gate sarif-results/*.sarif --level error

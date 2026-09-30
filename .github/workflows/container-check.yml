@@ -1,0 +1,54 @@
+name: container-check
+on:
+  pull_request:
+    paths:
+      - Containerfile
+      - Dockerfile
+      - .containerignore
+      - compose.yaml
+      - Cargo.toml
+      - Cargo.lock
+      - crates/**
+      - python/**
+      - pyproject.toml
+      - .github/workflows/container-check.yml
+      - .github/workflows/_build-image-*.yml
+      - .github/workflows/_scan-image.yml
+concurrency:
+  group: container-check-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  build-docker:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [runtime, train]
+    uses: ./.github/workflows/_build-image-docker.yml
+    with:
+      image: ksim-check-${{ matrix.target }}
+      target: ${{ matrix.target }}
+  build-podman:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [runtime, train]
+    uses: ./.github/workflows/_build-image-podman.yml
+    with:
+      image: ksim-check-${{ matrix.target }}
+      target: ${{ matrix.target }}
+  scan:
+    needs: [build-docker, build-podman]
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [docker, podman]
+        target: [runtime, train]
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/_scan-image.yml
+    with:
+      input: image-${{ matrix.engine }}-${{ matrix.target }}
+      report: trivy-${{ matrix.engine }}-${{ matrix.target }}

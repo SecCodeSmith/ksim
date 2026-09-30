@@ -1,0 +1,33 @@
+name: bench-smoke
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: bench-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/setup-rust-python
+      - run: cargo build --release -p ksim-bench
+      - name: Run steady scenario for baseline and oracle
+        run: |
+          for policy in k8s oracle; do
+            ./target/release/ksim-bench run --scenario scenarios/synthetic_steady.toml \
+              --policy "$policy" --seeds 2 --out results
+          done
+      - run: uv run --no-sync maturin develop --release
+      - name: Convert the Alibaba 2018 fixture and replay it
+        run: |
+          uv run --no-sync python -m ksim.datasets convert --source alibaba2018 \
+            --input python/tests/fixtures/datasets/alibaba2018 \
+            --output data/alibaba2018-fixture.ksimtrace --tick 15 --split train
+          for policy in k8s oracle; do
+            ./target/release/ksim-bench run --scenario scenarios/alibaba2018_fixture.toml \
+              --policy "$policy" --seeds 2 --out results
+          done
+      - run: uv run --no-sync python -m ksim.analysis results --baseline k8s >> "$GITHUB_STEP_SUMMARY"

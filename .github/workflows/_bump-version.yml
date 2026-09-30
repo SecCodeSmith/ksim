@@ -1,0 +1,43 @@
+name: _bump-version
+on:
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: true
+    outputs:
+      version:
+        value: ${{ jobs.bump.outputs.version }}
+permissions:
+  contents: write
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.13'
+      - run: rustup show
+      - id: bump
+        env:
+          BRANCH: ${{ inputs.branch }}
+          PYTHONPATH: tools/ci
+        run: |
+          version="$(python -m ksim_ci.bump --cargo-toml Cargo.toml --branch "$BRANCH" --date "$(date -u +%F)")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: cargo update --workspace
+      - env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore(release): v$VERSION"
+          git tag "v$VERSION"
+          git push origin "HEAD:refs/heads/$BRANCH" "v$VERSION"

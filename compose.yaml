@@ -1,0 +1,24 @@
+services:
+  bench:
+    image: ghcr.io/seccodesmith/ksim:nightly
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: runtime
+    command: ["ksim-bench", "--help"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+  train:
+    image: ghcr.io/seccodesmith/ksim-train:nightly
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: train
+    command: ["python", "-c", "import ksim"]
+    volumes:
+      - ./scenarios:/home/ksim/scenarios:ro
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true

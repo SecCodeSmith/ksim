@@ -1,0 +1,18 @@
+name: Setup Rust and Python
+description: Pinned Rust toolchain, Python 3.13, uv, dev dependencies and caches
+runs:
+  using: composite
+  steps:
+    - run: rustup show
+      shell: bash
+    - uses: Swatinem/rust-cache@v2.9.2
+    - uses: astral-sh/setup-uv@v10.2.0
+      with:
+        enable-cache: true
+    - run: |
+        uv python install 3.13
+        echo "PYO3_PYTHON=$(uv python find 3.13)" >> "$GITHUB_ENV"
+        echo "UV_PYTHON=3.13" >> "$GITHUB_ENV"
+      shell: bash
+    - run: uv sync --group dev --no-install-project
+      shell: bash

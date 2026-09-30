@@ -1,0 +1,39 @@
+name: nightly-detect
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    outputs:
+      branches: ${{ steps.detect.outputs.branches }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.13'
+      - id: detect
+        env:
+          PYTHONPATH: tools/ci
+        run: |
+          branches="$(git for-each-ref --format='%(refname:lstrip=3)%09%(committerdate:iso-strict)' refs/remotes/origin \
+            | python -m ksim_ci.nightly_detect --now "$(date -u +%FT%TZ)")"
+          echo "branches=$branches" >> "$GITHUB_OUTPUT"
+  pipeline:
+    needs: detect
+    if: needs.detect.outputs.branches != '[]'
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/_nightly-pipeline.yml
+    with:
+      branches: ${{ needs.detect.outputs.branches }}

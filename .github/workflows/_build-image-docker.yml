@@ -1,0 +1,57 @@
+name: _build-image-docker
+on:
+  workflow_call:
+    inputs:
+      ref: {type: string, default: ''}
+      image: {type: string, required: true}
+      target: {type: string, default: runtime}
+      push: {type: boolean, default: false}
+      tags: {type: string, default: check}
+      platforms:
+        type: string
+        default: linux/amd64
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+      - id: refs
+        env:
+          IMAGE: ${{ inputs.image }}
+          TAGS: ${{ inputs.tags }}
+        run: |
+          { echo 'list<<EOF'; sed -e '/^$/d' -e "s|^|$IMAGE:|" <<< "$TAGS"; echo EOF; } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v4.4.0
+      - uses: docker/setup-buildx-action@v4.4.1
+      - if: inputs.push
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ inputs.image }}
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: Containerfile
+          target: ${{ inputs.target }}
+          platforms: ${{ inputs.platforms }}
+          tags: ${{ steps.refs.outputs.list }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: ${{ inputs.push }}
+          outputs: ${{ !inputs.push && format('type=docker,dest={0}/image.tar', runner.temp) || '' }}
+          provenance: ${{ inputs.push && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.push }}
+          cache-from: type=gha,scope=${{ inputs.target }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.target }}
+      - if: '!inputs.push'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: image-docker-${{ inputs.target }}
+          path: ${{ runner.temp }}/image.tar
+          retention-days: 1

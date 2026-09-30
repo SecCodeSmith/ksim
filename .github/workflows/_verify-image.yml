@@ -1,0 +1,22 @@
+name: _verify-image
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Registry image reference to run
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: ${{ inputs.image }}
+    steps:
+      - run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${{ github.token }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - run: docker run --rm "$IMAGE" ksim-bench --version
+      - run: podman run --rm "$IMAGE" ksim-bench --version
