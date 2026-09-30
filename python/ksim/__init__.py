@@ -9,7 +9,7 @@ __version__ = version("ksim")
 
 def native_version() -> str:
     """Return the canonical installed package version."""
-    return _native_version()
+    return __version__
 
 
-__all__ = ["__version__", "native_version"]
+__all__ = ["__version__", "native_version", "_native_version"]
