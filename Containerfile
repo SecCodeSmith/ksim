@@ -3,8 +3,8 @@ FROM docker.io/library/rust:1.98.1-slim-trixie AS builder
 ENV RUSTUP_TOOLCHAIN=1.98.1
 WORKDIR /src
 COPY . .
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/target \
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/src/target,sharing=locked \
     host="$(rustc -vV | sed -n 's/^host: //p')" \
     && RUSTFLAGS="-C target-feature=+crt-static" \
        cargo build --release --locked -p ksim-bench --target "$host" \
@@ -17,8 +17,8 @@ ENV UV_PYTHON_INSTALL_DIR=/opt/python
 RUN uv python install 3.13
 WORKDIR /src
 COPY . .
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/target \
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/src/target,sharing=locked \
     uv tool run --from "maturin>=1.15.0,<2" maturin build --release --locked \
         --interpreter "$(uv python find 3.13)" --out /wheels
 
