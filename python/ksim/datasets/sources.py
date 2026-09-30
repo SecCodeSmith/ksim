@@ -2,7 +2,7 @@
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 import polars as pl
@@ -43,7 +43,16 @@ SUPPORTED_UNITS: dict[str, frozenset[str]] = {
 def unit_kwargs(source: str, units: Units) -> dict[str, float]:
     """The fields of `units` that are set, as loader keyword arguments. Raises ValueError naming
     the field when a set field is not supported by `source`."""
-    raise NotImplementedError
+    supported = SUPPORTED_UNITS[source]
+    set_fields = {
+        field.name: value
+        for field in fields(units)
+        if (value := getattr(units, field.name)) is not None
+    }
+    for name in set_fields:
+        if name not in supported:
+            raise ValueError(f"{name} is not supported by source {source!r}")
+    return set_fields
 
 
 def _require(directory: Path, pattern: str) -> list[Path]:

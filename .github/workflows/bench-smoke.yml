@@ -30,4 +30,10 @@ jobs:
             ./target/release/ksim-bench run --scenario scenarios/alibaba2018_fixture.toml \
               --policy "$policy" --seeds 2 --out results
           done
+      - name: Generate a scenario for the fixture trace and run it
+        run: |
+          uv run --no-sync python -m ksim.datasets scenario \
+            --trace data/alibaba2018-fixture.ksimtrace --output scenarios/generated/fixture.toml
+          ./target/release/ksim-bench run --scenario scenarios/generated/fixture.toml \
+            --policy k8s --seeds 1 --out results-generated
       - run: uv run --no-sync python -m ksim.analysis results --baseline k8s >> "$GITHUB_STEP_SUMMARY"
