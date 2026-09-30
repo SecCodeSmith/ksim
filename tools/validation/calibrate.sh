@@ -15,6 +15,7 @@ sleep 90
 millis=$(tools/validation/measure_cpu.sh 6 15)
 wait "$load"
 echo "measured ${millis}m CPU at ${rate} requests/s"
+mkdir -p "$(dirname "$out")"
 uv run --no-sync python -m ksim.validation calibrate \
   --scenario scenarios/validation_php_apache.toml \
   --cpu-millicores "$millis" --rps "$rate" --out "$out"
