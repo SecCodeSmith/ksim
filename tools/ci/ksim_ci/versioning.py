@@ -13,9 +13,7 @@ _WORKSPACE_VERSION = re.compile(
 )
 
 
-def _validate_semver_identifier(
-    identifier: str, *, allow_numeric_leading_zero: bool
-) -> None:
+def _validate_semver_identifier(identifier: str, *, allow_numeric_leading_zero: bool) -> None:
     if not identifier or not re.fullmatch(r"[0-9A-Za-z-]+", identifier):
         raise ValueError(f"invalid semantic version identifier: {identifier!r}")
     if (
