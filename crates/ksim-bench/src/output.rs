@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use ksim_metrics::report::EpisodeReport;
+use ksim_metrics::{report::EpisodeReport, trace::EpisodeTrace};
 
 /// One JSON object per line.
 ///
@@ -52,4 +52,19 @@ pub fn write_csv(reports: &[EpisodeReport], writer: impl Write) -> io::Result<()
         )?;
     }
     csv_writer.flush()
+}
+
+/// Header `time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate`,
+/// then one row per tick and service, ticks in order and services in scenario order; `time_s`
+/// is the tick time in whole seconds and `service` comes from `service_names` by index.
+///
+/// # Errors
+/// On write failure, or when a tick has a different service count than `service_names`.
+pub fn write_trajectory_csv(
+    trace: &EpisodeTrace,
+    service_names: &[String],
+    writer: impl Write,
+) -> io::Result<()> {
+    let _ = (trace, service_names, writer);
+    todo!()
 }

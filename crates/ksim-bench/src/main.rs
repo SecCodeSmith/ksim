@@ -35,6 +35,18 @@ enum Command {
         #[arg(long, default_value = "results")]
         out: PathBuf,
     },
+    /// Run one episode and write its per-tick trajectory (`output::write_trajectory_csv`) to
+    /// `--out`, creating parent directories.
+    Trajectory {
+        #[arg(long)]
+        scenario: PathBuf,
+        #[arg(long)]
+        policy: String,
+        #[arg(long, default_value_t = 0)]
+        seed: u64,
+        #[arg(long)]
+        out: PathBuf,
+    },
     /// Print the available policy names, one per line.
     ListPolicies,
 }
@@ -53,6 +65,12 @@ fn main() -> anyhow::Result<()> {
             first_seed,
             out,
         }) => run(&scenario, &policy, seeds, first_seed, &out),
+        Some(Command::Trajectory {
+            scenario,
+            policy,
+            seed,
+            out,
+        }) => trajectory(&scenario, &policy, seed, &out),
     }
 }
 
@@ -77,4 +95,9 @@ fn run(
     write_json_lines(&reports, File::create(out.join(format!("{stem}.jsonl")))?)?;
     write_csv(&reports, File::create(out.join(format!("{stem}.csv")))?)?;
     Ok(())
+}
+
+fn trajectory(scenario_path: &Path, policy: &str, seed: u64, out: &Path) -> anyhow::Result<()> {
+    let _ = (scenario_path, policy, seed, out);
+    todo!()
 }

@@ -57,6 +57,20 @@ fn record_trace(
     recorder.finish()
 }
 
+/// The per-tick trace of one episode, recorded exactly as `run_episode` records it before
+/// evaluating metrics.
+///
+/// # Errors
+/// When the simulation cannot be built from the scenario.
+pub fn episode_trace(
+    scenario: &Scenario,
+    policy: Policy,
+    seed: u64,
+) -> Result<ksim_metrics::trace::EpisodeTrace, ScenarioError> {
+    let _ = (scenario, policy, seed);
+    todo!()
+}
+
 /// Episodes for `seeds` consecutive seeds starting at `first_seed`, in seed order.
 ///
 /// # Errors
