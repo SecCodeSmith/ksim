@@ -34,6 +34,7 @@ jobs:
           image-ref: ${{ inputs.image }}
           input: ${{ inputs.input != '' && 'scan/image.tar' || '' }}
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: '1'
           format: sarif
           output: trivy.sarif

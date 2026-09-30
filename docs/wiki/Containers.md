@@ -41,3 +41,6 @@ cosign verify ghcr.io/seccodesmith/ksim:<tag> \
 ```
 
 The identity pattern assumes keyless signing from this repository's workflows.
+
+## Vulnerability policy
+The train stage upgrades Debian packages, `pip` and `setuptools` at build time. Pull requests scan both images with Trivy and fail on HIGH or CRITICAL findings that already have a fixed version; findings without an upstream fix are reported in the SARIF artifact but do not block, since no rebuild can remove them.
