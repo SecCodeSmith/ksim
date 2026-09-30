@@ -331,7 +331,7 @@ class TestScenarioSubcommand:
 
         toml_text = output_path.read_text()
         parsed = tomllib.loads(toml_text)
-        assert parsed["trace"]["duration_s"] == 120
+        assert parsed["duration_s"] == 120
 
     def test_scenario_missing_trace_returns_2(self, tmp_path):
         """scenario with missing trace file returns 2."""

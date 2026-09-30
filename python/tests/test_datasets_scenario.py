@@ -108,7 +108,7 @@ class TestScenarioRender:
         toml_text = render(trace_path, output_path, options)
         parsed = tomllib.loads(toml_text)
 
-        assert parsed["trace"]["tick_s"] == 12
+        assert parsed["tick_s"] == 12
 
     def test_render_duration_s_defaults_to_ticks_times_tick(self, tmp_path):
         """render duration_s defaults to ticks * tick_s."""
@@ -130,7 +130,7 @@ class TestScenarioRender:
         parsed = tomllib.loads(toml_text)
 
         # 4 ticks * 10 seconds = 40 seconds
-        assert parsed["trace"]["duration_s"] == 40
+        assert parsed["duration_s"] == 40
 
     def test_render_duration_s_honors_option(self, tmp_path):
         """render respects options.duration_s."""
@@ -151,7 +151,7 @@ class TestScenarioRender:
         toml_text = render(trace_path, output_path, options)
         parsed = tomllib.loads(toml_text)
 
-        assert parsed["trace"]["duration_s"] == 60
+        assert parsed["duration_s"] == 60
 
     def test_render_name_defaults_to_trace_stem(self, tmp_path):
         """render name defaults to trace file stem."""
