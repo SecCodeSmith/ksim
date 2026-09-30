@@ -216,12 +216,11 @@ class TestCompare:
             demand_rps=np.array([np.nan, np.nan, np.nan]),
             desired=np.array([10.0, 12.0, 14.0]),
             ready=np.array([9.0, 11.0, 13.0]),
-            latency_p95_ms=np.array([100.0, 100.0, 120.0]),
+            latency_p95_ms=np.array([100.0, 100.0, 100.0]),
             error_rate=np.array([0.0, 0.0, 0.0]),
         )
         report = compare(sim, obs)
-        expected = np.median([abs(100.0 - 100.0) / 100.0, abs(110.0 - 100.0) / 100.0])
-        assert report.latency_p95_relative_error == pytest.approx(expected)
+        assert report.latency_p95_relative_error == pytest.approx(0.1)
 
     def test_compare_latency_relative_error_none(self):
         """latency_p95_relative_error is None without valid ticks."""

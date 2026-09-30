@@ -11,17 +11,9 @@ class TestLoadSimulated:
         """Load simulated trajectory with basic CSV data."""
         csv_path = tmp_path / "sim.csv"
         csv_path.write_text(
-            "time_s,service,replica_type,metric,value\n"
-            "0,api,desired,replica_count,10\n"
-            "0,api,ready,replica_count,9\n"
-            "0,api,latency_p95_ms,latency,50.0\n"
-            "0,api,error_rate,rate,0.01\n"
-            "0,api,demand_rps,rate,100.0\n"
-            "5,api,desired,replica_count,12\n"
-            "5,api,ready,replica_count,11\n"
-            "5,api,latency_p95_ms,latency,52.0\n"
-            "5,api,error_rate,rate,0.02\n"
-            "5,api,demand_rps,rate,110.0\n"
+            "time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate\n"
+            "0,api,100.0,10,9,0,50.0,0.01\n"
+            "5,api,110.0,12,11,0,52.0,0.02\n"
         )
         traj = load_simulated(csv_path, "api")
         assert traj.tick_s == 5
@@ -35,22 +27,10 @@ class TestLoadSimulated:
         """Compute tick_s from time_s spacing."""
         csv_path = tmp_path / "sim.csv"
         csv_path.write_text(
-            "time_s,service,replica_type,metric,value\n"
-            "0,web,desired,replica_count,5\n"
-            "0,web,ready,replica_count,5\n"
-            "0,web,latency_p95_ms,latency,100.0\n"
-            "0,web,error_rate,rate,0.0\n"
-            "0,web,demand_rps,rate,50.0\n"
-            "3,web,desired,replica_count,6\n"
-            "3,web,ready,replica_count,6\n"
-            "3,web,latency_p95_ms,latency,105.0\n"
-            "3,web,error_rate,rate,0.0\n"
-            "3,web,demand_rps,rate,55.0\n"
-            "6,web,desired,replica_count,7\n"
-            "6,web,ready,replica_count,7\n"
-            "6,web,latency_p95_ms,latency,110.0\n"
-            "6,web,error_rate,rate,0.0\n"
-            "6,web,demand_rps,rate,60.0\n"
+            "time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate\n"
+            "0,web,50.0,5,5,0,100.0,0.0\n"
+            "3,web,55.0,6,6,0,105.0,0.0\n"
+            "6,web,60.0,7,7,0,110.0,0.0\n"
         )
         traj = load_simulated(csv_path, "web")
         assert traj.tick_s == 3
@@ -59,27 +39,11 @@ class TestLoadSimulated:
         """Filter rows by service name."""
         csv_path = tmp_path / "sim.csv"
         csv_path.write_text(
-            "time_s,service,replica_type,metric,value\n"
-            "0,api,desired,replica_count,10\n"
-            "0,api,ready,replica_count,9\n"
-            "0,api,latency_p95_ms,latency,50.0\n"
-            "0,api,error_rate,rate,0.01\n"
-            "0,api,demand_rps,rate,100.0\n"
-            "0,web,desired,replica_count,20\n"
-            "0,web,ready,replica_count,19\n"
-            "0,web,latency_p95_ms,latency,60.0\n"
-            "0,web,error_rate,rate,0.02\n"
-            "0,web,demand_rps,rate,200.0\n"
-            "5,api,desired,replica_count,12\n"
-            "5,api,ready,replica_count,11\n"
-            "5,api,latency_p95_ms,latency,52.0\n"
-            "5,api,error_rate,rate,0.03\n"
-            "5,api,demand_rps,rate,120.0\n"
-            "5,web,desired,replica_count,22\n"
-            "5,web,ready,replica_count,21\n"
-            "5,web,latency_p95_ms,latency,62.0\n"
-            "5,web,error_rate,rate,0.04\n"
-            "5,web,demand_rps,rate,220.0\n"
+            "time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate\n"
+            "0,api,100.0,10,9,0,50.0,0.01\n"
+            "0,web,200.0,20,19,0,60.0,0.02\n"
+            "5,api,120.0,12,11,0,52.0,0.03\n"
+            "5,web,220.0,22,21,0,62.0,0.04\n"
         )
         traj = load_simulated(csv_path, "api")
         assert len(traj.desired) == 2
@@ -92,12 +56,9 @@ class TestLoadSimulated:
         """Raise ValueError when service not found."""
         csv_path = tmp_path / "sim.csv"
         csv_path.write_text(
-            "time_s,service,replica_type,metric,value\n"
-            "0,api,desired,replica_count,10\n"
-            "0,api,ready,replica_count,9\n"
-            "0,api,latency_p95_ms,latency,50.0\n"
-            "0,api,error_rate,rate,0.01\n"
-            "0,api,demand_rps,rate,100.0\n"
+            "time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate\n"
+            "0,api,100.0,10,9,0,50.0,0.01\n"
+            "5,api,110.0,12,11,0,52.0,0.02\n"
         )
         with pytest.raises(ValueError):
             load_simulated(csv_path, "nonexistent")
@@ -106,12 +67,8 @@ class TestLoadSimulated:
         """Raise ValueError when service has only one row."""
         csv_path = tmp_path / "sim.csv"
         csv_path.write_text(
-            "time_s,service,replica_type,metric,value\n"
-            "0,api,desired,replica_count,10\n"
-            "0,api,ready,replica_count,9\n"
-            "0,api,latency_p95_ms,latency,50.0\n"
-            "0,api,error_rate,rate,0.01\n"
-            "0,api,demand_rps,rate,100.0\n"
+            "time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate\n"
+            "0,api,100.0,10,9,0,50.0,0.01\n"
         )
         with pytest.raises(ValueError):
             load_simulated(csv_path, "api")
