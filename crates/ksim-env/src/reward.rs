@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use ksim_metrics::{metric::Slo, trace::TickSample};
+use ksim_metrics::{
+    metric::{Slo, SloPercentile},
+    trace::{ServiceSample, TickSample},
+};
 
 use crate::layout::WeightedRewardWeights;
 
@@ -23,8 +26,27 @@ pub trait RewardFn: Debug + Send {
 /// exceeds `slo.max_error_rate`. 0 when there is no demand.
 #[must_use]
 pub fn slo_violation(sample: &TickSample, slo: &Slo) -> f64 {
-    let _ = (sample, slo);
-    todo!()
+    let (violating, total) = sample
+        .services
+        .iter()
+        .filter(|service| service.demand_rps > 0.0)
+        .fold((0.0, 0.0), |(violating, total), service| {
+            let weight = service.demand_rps;
+            let violates = violates_slo(service, slo);
+            (
+                violating + if violates { weight } else { 0.0 },
+                total + weight,
+            )
+        });
+    if total > 0.0 { violating / total } else { 0.0 }
+}
+
+fn violates_slo(service: &ServiceSample, slo: &Slo) -> bool {
+    let latency_ms = match slo.percentile {
+        SloPercentile::P95 => service.latency_p95_ms,
+        SloPercentile::P99 => service.latency_p99_ms,
+    };
+    latency_ms > slo.latency_ms || service.error_rate > slo.max_error_rate
 }
 
 /// Negated weighted sum of `slo_violation`, `hourly_cost / max_hourly_cost` and
@@ -37,7 +59,17 @@ pub struct WeightedReward {
 
 impl RewardFn for WeightedReward {
     fn reward(&mut self, sample: &TickSample, context: &RewardContext) -> f64 {
-        let _ = (sample, context);
-        todo!()
+        let weights = &self.weights;
+        let cost_share = share(sample.hourly_cost, context.max_hourly_cost);
+        let changes = f64::from(sample.replica_changes) + f64::from(sample.node_changes);
+        #[allow(clippy::cast_precision_loss)]
+        let changes_per_service = share(changes, context.services as f64);
+        -(weights.slo * slo_violation(sample, &context.slo)
+            + weights.cost * cost_share
+            + weights.actions * changes_per_service)
     }
+}
+
+fn share(part: f64, whole: f64) -> f64 {
+    if whole > 0.0 { part / whole } else { 0.0 }
 }

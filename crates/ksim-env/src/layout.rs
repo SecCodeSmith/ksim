@@ -1,4 +1,5 @@
 use ksim_bench::scenario::Scenario;
+use ksim_metrics::metric::SloPercentile;
 
 use crate::error::EnvError;
 
@@ -87,21 +88,67 @@ pub struct Layout {
     pub slo_uses_p99: bool,
 }
 
+const NODE_ACTION_CHOICES: u32 = 3;
+
 impl Layout {
     /// # Errors
     /// `ServiceSlots` when `config.service_slots` is smaller than the scenario's services.
     pub fn new(scenario: &Scenario, config: &EnvConfig) -> Result<Self, EnvError> {
-        let _ = (scenario, config);
-        todo!()
+        let services = scenario.services.len();
+        let service_slots = config.service_slots.unwrap_or(services);
+        if service_slots < services {
+            return Err(EnvError::ServiceSlots {
+                services,
+                slots: service_slots,
+            });
+        }
+        Ok(Self {
+            service_slots,
+            services: scenario
+                .services
+                .iter()
+                .map(|service| ReplicaBounds {
+                    min_replicas: service.hpa.min_replicas,
+                    max_replicas: service.hpa.max_replicas,
+                })
+                .collect(),
+            pools: scenario.pools.len(),
+            max_replica_step: config.max_replica_step,
+            control: config.control,
+            slo_latency_ms: scenario.slo.latency_ms,
+            slo_uses_p99: scenario.slo.percentile == SloPercentile::P99,
+        })
     }
 
     #[must_use]
     pub fn observation_len(&self) -> usize {
-        todo!()
+        self.service_slots * SERVICE_FEATURES + self.pools * POOL_FEATURES + TIME_FEATURES
+    }
+
+    /// Number of entries in an action: a service slot each, plus a pool each when nodes are
+    /// controlled.
+    #[must_use]
+    pub fn action_len(&self) -> usize {
+        match self.control {
+            Control::Replicas => self.service_slots,
+            Control::ReplicasAndNodes => self.service_slots + self.pools,
+        }
+    }
+
+    /// Exclusive upper bound of the action entry at `index`.
+    #[must_use]
+    pub fn action_bound(&self, index: usize) -> u32 {
+        if index < self.service_slots {
+            2 * self.max_replica_step + 1
+        } else {
+            NODE_ACTION_CHOICES
+        }
     }
 
     #[must_use]
     pub fn action_nvec(&self) -> Vec<u32> {
-        todo!()
+        (0..self.action_len())
+            .map(|index| self.action_bound(index))
+            .collect()
     }
 }

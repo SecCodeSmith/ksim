@@ -170,7 +170,9 @@ fn vpa(scenario: &Scenario) -> Box<dyn ResourceRecommender> {
     ))
 }
 
-fn cluster_autoscaler(seed: u64) -> Box<dyn NodeProvisioner> {
+/// The Cluster Autoscaler of the `k8s` policy, for callers that manage nodes themselves.
+#[must_use]
+pub fn cluster_autoscaler(seed: u64) -> Box<dyn NodeProvisioner> {
     Box::new(ClusterAutoscaler::new(ClusterAutoscalerConfig {
         expander: Expander::LeastWaste,
         seed,
