@@ -30,7 +30,6 @@ Every workflow file stays at 60 lines or fewer.
 | `security-deps.yml` | push, PR, weekly | cargo-deny, cargo-audit, pip-audit |
 | `security-codeql.yml` | push, PR, weekly | CodeQL for Rust and Python |
 | `security-secrets.yml` | push, PR | gitleaks |
-| `dependency-review.yml` | PR | GitHub dependency review |
 | `perf.yml` | push, PR | release-mode `ksim-core` throughput gate (`cargo test --release -p ksim-core --test perf -- --ignored`) |
 | `bench-smoke.yml` | push, PR | builds `ksim-bench`, runs `synthetic_steady` for `k8s` and `oracle` (2 seeds), writes the `ksim.analysis` leaderboard to the job summary |
 | `container-check.yml` | PR touching container or source files | `_build-image-docker` and `_build-image-podman` (no push) + Trivy scan |
@@ -55,3 +54,6 @@ On a `v*` tag: `release-artifacts.yml` (binaries, wheels, GitHub release) and `r
 ## Dependency updates
 
 Dependabot/Renovate for Cargo, uv, GitHub Actions and base images. Actions are pinned to the latest stable major or commit SHA.
+
+## Permissions of reusable workflows
+Reusable image-build workflows declare no `permissions` of their own: they inherit the caller's token, so `container-check` builds with `contents: read` while the nightly and release image workflows grant `packages: write` for the push. A called workflow that declares more than its caller grants fails at startup. Dependency review is not used because it requires the dependency graph with GitHub Advanced Security; `security-deps` (cargo-deny, cargo-audit, pip-audit) covers vulnerable dependencies instead.

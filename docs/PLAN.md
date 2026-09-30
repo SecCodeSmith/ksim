@@ -53,7 +53,6 @@ Many small, single-purpose workflows (SRP applied to CI). Shared steps live in *
 | `security-deps.yml` | push, PR, weekly | cargo-deny, cargo-audit, pip-audit |
 | `security-codeql.yml` | push, PR, weekly | CodeQL Rust + Python |
 | `security-secrets.yml` | push, PR | gitleaks |
-| `dependency-review.yml` | PR | GitHub dependency review |
 | `container-check.yml` | PR touching `Containerfile`/src | `_build-image` with Docker **and** Podman (no push) + `_scan-image` |
 
 **Nightly** (chain of small workflows linked by `workflow_run` / `workflow_call`):
