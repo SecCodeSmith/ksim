@@ -11,6 +11,10 @@ repository.workspace = true
 name = "ksim"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
+[dependencies]
+ksim-bench.workspace = true
+ksim-env.workspace = true
+
 [lints.rust]
 unsafe_code = "deny"
 

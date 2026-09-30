@@ -514,6 +514,10 @@ dependencies = [
 [[package]]
 name = "ksim-capi"
 version = "0.1.0"
+dependencies = [
+ "ksim-bench",
+ "ksim-env",
+]
 
 [[package]]
 name = "ksim-core"
