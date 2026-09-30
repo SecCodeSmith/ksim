@@ -25,12 +25,7 @@ spec:
               memory: 64Mi
             limits:
               cpu: 500m
-              memory: 128Mi
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            periodSeconds: 5
+              memory: 512Mi
 ---
 apiVersion: v1
 kind: Service

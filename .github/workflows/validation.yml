@@ -51,6 +51,8 @@ jobs:
       - run: curl --retry 10 --retry-all-errors --retry-delay 3 -sf "$APP_URL"
       - run: tools/validation/calibrate.sh "$APP_URL" 8 validation/calibrated.toml
       - run: tools/validation/replay.sh "$APP_URL" validation/calibrated.toml validation
+      - if: failure()
+        run: tools/validation/diagnose.sh
       - if: always()
         run: cat validation/report.md >> "$GITHUB_STEP_SUMMARY" || true
       - if: always()
