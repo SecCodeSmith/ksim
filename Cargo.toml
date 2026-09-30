@@ -18,7 +18,7 @@ edition = "2024"
 rust-version = "1.98.1"
 license-file = "LICENCE"
 publish = false
-repository = "https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler"
+repository = "https://github.com/SecCodeSmith/ksim"
 
 [workspace.dependencies]
 ksim-core = { path = "crates/ksim-core" }

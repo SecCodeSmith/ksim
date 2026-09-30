@@ -8,6 +8,7 @@
 - [Benchmark Metrics](Benchmark-Metrics)
 - [Benchmark Protocol](Benchmark-Protocol)
 - [Training Guide](Training-Guide)
+- [Validation](Validation)
 - [Extending](Extending)
 - [Development](Development)
 - [CI/CD](CI-CD)

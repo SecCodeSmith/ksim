@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use ksim_metrics::report::EpisodeReport;
+use ksim_metrics::{report::EpisodeReport, trace::EpisodeTrace};
 
 /// One JSON object per line.
 ///
@@ -50,6 +50,52 @@ pub fn write_csv(reports: &[EpisodeReport], writer: impl Write) -> io::Result<()
             .into_iter()
             .chain(report.metrics.values().map(f64::to_string)),
         )?;
+    }
+    csv_writer.flush()
+}
+
+/// Header `time_s,service,demand_rps,desired,ready,cpu_usage_millis,latency_p95_ms,error_rate`,
+/// then one row per tick and service, ticks in order and services in scenario order; `time_s`
+/// is the tick time in whole seconds and `service` comes from `service_names` by index.
+///
+/// # Errors
+/// On write failure, or when a tick has a different service count than `service_names`.
+pub fn write_trajectory_csv(
+    trace: &EpisodeTrace,
+    service_names: &[String],
+    writer: impl Write,
+) -> io::Result<()> {
+    let mut csv_writer = csv::Writer::from_writer(writer);
+    csv_writer.write_record([
+        "time_s",
+        "service",
+        "demand_rps",
+        "desired",
+        "ready",
+        "cpu_usage_millis",
+        "latency_p95_ms",
+        "error_rate",
+    ])?;
+    for tick in &trace.ticks {
+        if tick.services.len() != service_names.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "tick service count differs from service names",
+            ));
+        }
+        let time_s = (tick.time.as_millis() / 1000).to_string();
+        for (name, sample) in service_names.iter().zip(&tick.services) {
+            csv_writer.write_record([
+                time_s.as_str(),
+                name,
+                &sample.demand_rps.to_string(),
+                &sample.desired.to_string(),
+                &sample.ready.to_string(),
+                &sample.cpu_usage_millis.to_string(),
+                &sample.latency_p95_ms.to_string(),
+                &sample.error_rate.to_string(),
+            ])?;
+        }
     }
     csv_writer.flush()
 }

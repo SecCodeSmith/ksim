@@ -13,9 +13,7 @@ _WORKSPACE_VERSION = re.compile(
 )
 
 
-def _validate_semver_identifier(
-    identifier: str, *, allow_numeric_leading_zero: bool
-) -> None:
+def _validate_semver_identifier(identifier: str, *, allow_numeric_leading_zero: bool) -> None:
     if not identifier or not re.fullmatch(r"[0-9A-Za-z-]+", identifier):
         raise ValueError(f"invalid semantic version identifier: {identifier!r}")
     if (
@@ -48,7 +46,9 @@ def next_nightly_version(current: str, branch: str, day: date) -> str:
     is_prerelease = prerelease is not None
 
     if branch == "main":
-        return f"{major}.{minor}.{patch}-nightly.{day:%Y%m%d}"
+        # `-dev.N` is the SemVer prerelease that maturin maps to a PEP 440 dev release
+        # (`X.Y.Z.devN`); `-nightly.N` has no PEP 440 form and breaks wheel builds.
+        return f"{major}.{minor}.{patch}-dev.{day:%Y%m%d}"
 
     release = _RELEASE_BRANCH.match(branch)
     if release is None:

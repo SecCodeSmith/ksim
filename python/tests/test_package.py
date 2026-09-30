@@ -1,6 +1,7 @@
 import importlib.metadata
 
 import ksim
+from packaging.version import Version
 
 
 def test_version_constant_matches_metadata():
@@ -8,4 +9,4 @@ def test_version_constant_matches_metadata():
 
 
 def test_native_version_matches_package_version():
-    assert ksim.native_version() == ksim.__version__
+    assert Version(ksim.native_version()) == Version(ksim.__version__)

@@ -1,0 +1,41 @@
+# Upstream HPA walkthrough app: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+# Resources and HPA bounds must match scenarios/validation_php_apache.toml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: php-apache
+  template:
+    metadata:
+      labels:
+        run: php-apache
+    spec:
+      containers:
+        - name: php-apache
+          image: registry.k8s.io/hpa-example
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 200m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+spec:
+  type: NodePort
+  selector:
+    run: php-apache
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080

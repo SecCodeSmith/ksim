@@ -6,9 +6,9 @@ use std::{
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use ksim_bench::{
-    output::{write_csv, write_json_lines},
+    output::{write_csv, write_json_lines, write_trajectory_csv},
     policy::Policy,
-    runner::run_seeds,
+    runner::{episode_trace, run_seeds},
     scenario::Scenario,
 };
 
@@ -35,6 +35,18 @@ enum Command {
         #[arg(long, default_value = "results")]
         out: PathBuf,
     },
+    /// Run one episode and write its per-tick trajectory (`output::write_trajectory_csv`) to
+    /// `--out`, creating parent directories.
+    Trajectory {
+        #[arg(long)]
+        scenario: PathBuf,
+        #[arg(long)]
+        policy: String,
+        #[arg(long, default_value_t = 0)]
+        seed: u64,
+        #[arg(long)]
+        out: PathBuf,
+    },
     /// Print the available policy names, one per line.
     ListPolicies,
 }
@@ -53,6 +65,12 @@ fn main() -> anyhow::Result<()> {
             first_seed,
             out,
         }) => run(&scenario, &policy, seeds, first_seed, &out),
+        Some(Command::Trajectory {
+            scenario,
+            policy,
+            seed,
+            out,
+        }) => trajectory(&scenario, &policy, seed, &out),
     }
 }
 
@@ -76,5 +94,21 @@ fn run(
     let stem = format!("{}-{policy}", scenario.name);
     write_json_lines(&reports, File::create(out.join(format!("{stem}.jsonl")))?)?;
     write_csv(&reports, File::create(out.join(format!("{stem}.csv")))?)?;
+    Ok(())
+}
+
+fn trajectory(scenario_path: &Path, policy: &str, seed: u64, out: &Path) -> anyhow::Result<()> {
+    let policy: Policy = policy.parse()?;
+    let scenario = Scenario::from_toml_file(scenario_path)?;
+    let trace = episode_trace(&scenario, policy, seed)?;
+    let service_names: Vec<String> = scenario
+        .services
+        .iter()
+        .map(|service| service.name.clone())
+        .collect();
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
+    }
+    write_trajectory_csv(&trace, &service_names, File::create(out)?)?;
     Ok(())
 }

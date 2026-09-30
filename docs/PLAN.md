@@ -59,7 +59,7 @@ Many small, single-purpose workflows (SRP applied to CI). Shared steps live in *
 | Workflow | Content |
 |---|---|
 | `nightly-detect.yml` | cron daily + manual; finds `main` / `release/*` branches with commits or merges in last 24 h; outputs branch list; exits if empty |
-| `nightly-bump.yml` | per branch: `_bump-version` (`main` → `X.Y.Z-nightly.YYYYMMDD`, `release/X.Y` → patch bump) via `cargo set-version` + `pyproject.toml` sync |
+| `nightly-bump.yml` | per branch: `_bump-version` (`main` → `X.Y.Z-dev.YYYYMMDD`, `release/X.Y` → patch bump) via `cargo set-version` + `pyproject.toml` sync |
 | `nightly-build.yml` | per branch: `_build-binaries` + `_build-wheels`, attach to pre-release |
 | `nightly-images.yml` | `_build-image` (push, multi-arch) → `_scan-image` → `_sign-image` |
 

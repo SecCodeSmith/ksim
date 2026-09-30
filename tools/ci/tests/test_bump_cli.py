@@ -21,8 +21,8 @@ name = "ksim"
 
     assert result == 0
     captured = capsys.readouterr()
-    assert captured.out.strip() == "0.1.0-nightly.20260929"
-    assert "0.1.0-nightly.20260929" in cargo_toml.read_text()
+    assert captured.out.strip() == "0.1.0-dev.20260929"
+    assert "0.1.0-dev.20260929" in cargo_toml.read_text()
 
 
 def test_release_branch_bump_increments_patch(tmp_path, capsys):

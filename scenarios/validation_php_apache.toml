@@ -1,0 +1,50 @@
+# Mirrors deploy/validation/php-apache.yaml (the upstream HPA walkthrough app); CI overwrites
+# cpu_millis_per_request with the value measured on the kind cluster before comparing.
+name = "validation_php_apache"
+duration_s = 1500
+tick_s = 15
+
+[slo]
+latency_ms = 500.0
+percentile = "P95"
+max_error_rate = 0.01
+availability_target = 0.999
+
+[[pools]]
+name = "kind"
+cpu_millis = 4000
+memory_mib = 16384
+min_nodes = 1
+max_nodes = 1
+initial_nodes = 1
+price_per_hour = 0.0
+
+[[services]]
+name = "php-apache"
+requests_cpu_millis = 200
+requests_memory_mib = 64
+limits_cpu_millis = 500
+limits_memory_mib = 512
+initial_replicas = 1
+cpu_millis_per_request = 30.0
+memory_base_mib = 20.0
+memory_mib_per_rps = 0.0
+
+[services.curve]
+kind = "flash_crowd"
+base = 2.0
+peak = 18.0
+start_s = 180
+decay_s = 420
+
+[services.performance]
+kind = "queueing"
+cpu_millis_per_request = 30.0
+timeout_ms = 10000.0
+ca2 = 1.0
+cs2 = 1.0
+
+[services.hpa]
+min_replicas = 1
+max_replicas = 10
+target_cpu_utilization = 0.5
