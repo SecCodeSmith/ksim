@@ -32,7 +32,7 @@ COPY --from=builder /out/ksim-bench /usr/local/bin/ksim-bench
 USER nonroot
 CMD ["ksim-bench", "--help"]
 
-FROM docker.io/library/python:3.13-slim-trixie AS train
+FROM docker.io/library/python:3.14-slim-trixie AS train
 LABEL org.opencontainers.image.title="ksim-train" \
       org.opencontainers.image.description="ksim with Python bindings for autoscaler training" \
       org.opencontainers.image.source="https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler" \
