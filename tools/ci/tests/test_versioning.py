@@ -8,11 +8,11 @@ class TestNextNightlyVersion:
     @pytest.mark.parametrize(
         "current,branch,day,expected",
         [
-            ("0.1.0", "main", date(2026, 9, 29), "0.1.0-nightly.20260929"),
-            ("0.2.0-nightly.20260928", "main", date(2026, 9, 29), "0.2.0-nightly.20260929"),
-            ("1.0.0", "main", date(2025, 1, 1), "1.0.0-nightly.20250101"),
-            ("2.3.4-alpha", "main", date(2026, 9, 29), "2.3.4-nightly.20260929"),
-            ("2.3.4+build.9", "main", date(2026, 9, 29), "2.3.4-nightly.20260929"),
+            ("0.1.0", "main", date(2026, 9, 29), "0.1.0-dev.20260929"),
+            ("0.2.0-dev.20260928", "main", date(2026, 9, 29), "0.2.0-dev.20260929"),
+            ("1.0.0", "main", date(2025, 1, 1), "1.0.0-dev.20250101"),
+            ("2.3.4-alpha", "main", date(2026, 9, 29), "2.3.4-dev.20260929"),
+            ("2.3.4+build.9", "main", date(2026, 9, 29), "2.3.4-dev.20260929"),
         ],
     )
     def test_main_branch_creates_nightly_version(self, current, branch, day, expected):
