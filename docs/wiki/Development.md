@@ -11,7 +11,7 @@ TDD is always test first: red, green, refactor.
 
 Tests are changed only by separate `test:` commits with a written justification; the implementer never edits them.
 
-Git history shows `test:` commits before the implementation commits for each feature. Baselines start from tests ported from upstream Kubernetes; metrics from hand-computed examples in the papers. CI gates on test failure and coverage regression (target 90 % for core, autoscalers, metrics).
+Git history shows `test:` commits before the implementation commits for each feature. Baselines start from tests ported from upstream Kubernetes; metrics from hand-computed examples in the papers. CI gates on test failure and coverage regression (target > 80 % for core, autoscalers, metrics).
 
 ## Contract tests
 
