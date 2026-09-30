@@ -527,6 +527,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ksim-env"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "ksim-autoscalers",
+ "ksim-bench",
+ "ksim-core",
+ "ksim-metrics",
+ "rayon",
+ "thiserror",
+]
+
+[[package]]
 name = "ksim-metrics"
 version = "0.1.0"
 dependencies = [
