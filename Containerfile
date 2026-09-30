@@ -38,10 +38,12 @@ LABEL org.opencontainers.image.title="ksim-train" \
       org.opencontainers.image.vendor="SecCodeSmith"
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* && \
-    pip install --upgrade pip setuptools && \
     useradd --create-home --uid 10001 ksim
 COPY --from=wheel-builder /wheels /tmp/wheels
-RUN pip install "$(ls /tmp/wheels/*.whl)[gym]" && rm -rf /tmp/wheels
+# pip is only needed to install the wheel; its vendored msgpack and pkg_resources carry
+# fixable CVEs, so it is removed from the final image.
+RUN pip install "$(ls /tmp/wheels/*.whl)[gym]" && rm -rf /tmp/wheels && \
+    python -m pip uninstall -y pip
 COPY --from=builder /out/ksim-bench /usr/local/bin/ksim-bench
 USER ksim
 WORKDIR /home/ksim
