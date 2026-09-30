@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 use ksim_bench::scenario::Scenario;
 
 use rayon::prelude::*;
@@ -13,7 +15,8 @@ use crate::{
 /// observations `num_envs * observation_len`, actions `num_envs * action_nvec.len()`,
 /// rewards/terminated/truncated `num_envs`.
 ///
-/// A step runs the envs on the calling thread when the previous step's measured serial cost
+/// `with_parallel_threshold` overrides `PARALLEL_THRESHOLD` (`Duration::ZERO` always runs in
+/// parallel, `Duration::MAX` never does). A step runs the envs on the calling thread when the previous step's measured serial cost
 /// (its per-env step time times `num_envs`) is below `PARALLEL_THRESHOLD`, and in parallel
 /// with rayon otherwise: small scenarios step in about a microsecond, far less than waking
 /// the thread pool. The schedule changes only speed; results are identical either way.
@@ -28,7 +31,12 @@ pub struct VectorEnv {
     envs: Vec<Env>,
     episodes: Vec<u64>,
     seed: u64,
+    parallel_threshold: Duration,
+    serial_cost: Option<Duration>,
 }
+
+/// Estimated serial cost of one vector step below which `VectorEnv` skips the thread pool.
+pub const PARALLEL_THRESHOLD: Duration = Duration::from_micros(200);
 
 impl VectorEnv {
     /// # Errors
@@ -44,7 +52,15 @@ impl VectorEnv {
             envs,
             episodes: vec![0; num_envs],
             seed: 0,
+            parallel_threshold: PARALLEL_THRESHOLD,
+            serial_cost: None,
         })
+    }
+
+    #[must_use]
+    pub fn with_parallel_threshold(mut self, threshold: Duration) -> Self {
+        self.parallel_threshold = threshold;
+        self
     }
 
     #[must_use]
@@ -93,32 +109,49 @@ impl VectorEnv {
         check_len("truncated", truncated.len(), self.num_envs())?;
         let layout = self.first().layout();
         let (observation_len, action_len) = (layout.observation_len(), layout.action_len());
-        let (seed, num_envs) = (self.seed, self.envs.len() as u64);
-        (
-            &mut self.envs,
-            &mut self.episodes,
-            actions.par_chunks(action_len),
-            observations.par_chunks_mut(observation_len),
-            rewards,
-            terminated,
-            truncated,
-        )
-            .into_par_iter()
-            .enumerate()
-            .try_for_each(
-                |(index, (env, episode, action, observation, reward, terminated, truncated))| {
-                    let lane = Lane {
-                        index,
-                        seed,
-                        num_envs,
-                    };
-                    let outcome = lane.advance(env, episode, action, observation)?;
-                    *reward = reward_as_f32(outcome.reward);
-                    *terminated = outcome.terminated;
-                    *truncated = outcome.truncated;
-                    Ok(())
-                },
+        let lane_layout = LaneLayout {
+            seed: self.seed,
+            num_envs: self.envs.len() as u64,
+        };
+        let serial_cost = if self.should_run_in_parallel() {
+            let probe_cost = (
+                &mut self.envs,
+                &mut self.episodes,
+                actions.par_chunks(action_len),
+                observations.par_chunks_mut(observation_len),
+                rewards,
+                terminated,
+                truncated,
             )
+                .into_par_iter()
+                .enumerate()
+                .map(|(index, slot)| Slot::from(slot).advance(&lane_layout.lane(index), index == 0))
+                .try_reduce(|| Duration::ZERO, |a, b| Ok(a.max(b)))?;
+            probe_cost * u32::try_from(self.envs.len()).unwrap_or(u32::MAX)
+        } else {
+            let started = Instant::now();
+            self.envs
+                .iter_mut()
+                .zip(self.episodes.iter_mut())
+                .zip(actions.chunks(action_len))
+                .zip(observations.chunks_mut(observation_len))
+                .zip(rewards)
+                .zip(terminated)
+                .zip(truncated)
+                .enumerate()
+                .try_for_each(|(index, slot)| {
+                    Slot::from(slot)
+                        .advance(&lane_layout.lane(index), false)
+                        .map(drop)
+                })?;
+            started.elapsed()
+        };
+        self.serial_cost = Some(serial_cost);
+        Ok(())
+    }
+
+    fn should_run_in_parallel(&self) -> bool {
+        self.serial_cost.unwrap_or(Duration::ZERO) >= self.parallel_threshold
     }
 
     fn validate_step(
@@ -178,6 +211,100 @@ fn offset_index(error: EnvError, offset: usize) -> EnvError {
             bound,
         },
         other => other,
+    }
+}
+
+#[derive(Clone, Copy)]
+struct LaneLayout {
+    seed: u64,
+    num_envs: u64,
+}
+
+impl LaneLayout {
+    fn lane(self, index: usize) -> Lane {
+        Lane {
+            index,
+            seed: self.seed,
+            num_envs: self.num_envs,
+        }
+    }
+}
+
+/// One env with its per-env slices of the caller's buffers.
+struct Slot<'a> {
+    env: &'a mut Env,
+    episode: &'a mut u64,
+    action: &'a [u32],
+    observation: &'a mut [f32],
+    reward: &'a mut f32,
+    terminated: &'a mut bool,
+    truncated: &'a mut bool,
+}
+
+type FlatSlot<'a> = (
+    &'a mut Env,
+    &'a mut u64,
+    &'a [u32],
+    &'a mut [f32],
+    &'a mut f32,
+    &'a mut bool,
+    &'a mut bool,
+);
+
+type NestedSlot<'a> = (
+    (
+        (
+            (((&'a mut Env, &'a mut u64), &'a [u32]), &'a mut [f32]),
+            &'a mut f32,
+        ),
+        &'a mut bool,
+    ),
+    &'a mut bool,
+);
+
+impl<'a> From<FlatSlot<'a>> for Slot<'a> {
+    fn from(
+        (env, episode, action, observation, reward, terminated, truncated): FlatSlot<'a>,
+    ) -> Self {
+        Self {
+            env,
+            episode,
+            action,
+            observation,
+            reward,
+            terminated,
+            truncated,
+        }
+    }
+}
+
+impl<'a> From<NestedSlot<'a>> for Slot<'a> {
+    fn from(
+        ((((((env, episode), action), observation), reward), terminated), truncated): NestedSlot<
+            'a,
+        >,
+    ) -> Self {
+        Self::from((
+            env,
+            episode,
+            action,
+            observation,
+            reward,
+            terminated,
+            truncated,
+        ))
+    }
+}
+
+impl Slot<'_> {
+    /// Advances the env and writes its results; returns the step time when `timed`, else zero.
+    fn advance(self, lane: &Lane, timed: bool) -> Result<Duration, EnvError> {
+        let started = timed.then(Instant::now);
+        let outcome = lane.advance(self.env, self.episode, self.action, self.observation)?;
+        *self.reward = reward_as_f32(outcome.reward);
+        *self.terminated = outcome.terminated;
+        *self.truncated = outcome.truncated;
+        Ok(started.map_or(Duration::ZERO, |started| started.elapsed()))
     }
 }
 
