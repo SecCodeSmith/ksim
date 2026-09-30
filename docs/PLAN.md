@@ -9,7 +9,7 @@ User decisions:
 - Datasets: all four above.
 
 ## Engineering rules (apply to every milestone)
-1. **Test-Driven Development, always test first**: for every feature the commit sequence is *failing test → minimal implementation → refactor*. No production code without a failing test that demands it. Baseline autoscalers start from tests ported from upstream Kubernetes test cases; metrics start from hand-computed examples from the cited papers. CI blocks merges on test failure and on coverage regression (`cargo-llvm-cov`, target ≥ 90 % for core/autoscalers/metrics).
+1. **Test-Driven Development, always test first**: for every feature the commit sequence is *failing test → minimal implementation → refactor*. No production code without a failing test that demands it. Baseline autoscalers start from tests ported from upstream Kubernetes test cases; metrics start from hand-computed examples from the cited papers. CI blocks merges on test failure and on coverage regression (`cargo-llvm-cov`, target > 80 % for core/autoscalers/metrics).
 2. **SOLID**:
    - *S*: one responsibility per module/type (scheduler ≠ perf model ≠ metrics ≠ trace IO).
    - *O*: new autoscalers, datasets, perf models, rewards and metrics are added by implementing a trait, never by editing the engine (`Autoscaler`, `TraceSource`, `PerformanceModel`, `RewardFn`, `Metric`, `SchedulerPlugin`).

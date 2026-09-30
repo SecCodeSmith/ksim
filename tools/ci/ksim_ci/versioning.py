@@ -13,11 +13,20 @@ _WORKSPACE_VERSION = re.compile(
 )
 
 
-def _validate_semver_identifier(identifier: str, *, allow_numeric_leading_zero: bool) -> None:
+def _validate_semver_identifier(
+    identifier: str, *, allow_numeric_leading_zero: bool
+) -> None:
     if not identifier or not re.fullmatch(r"[0-9A-Za-z-]+", identifier):
         raise ValueError(f"invalid semantic version identifier: {identifier!r}")
-    if identifier.isdigit() and not allow_numeric_leading_zero and len(identifier) > 1 and identifier.startswith("0"):
-        raise ValueError(f"numeric prerelease identifiers cannot contain leading zeroes: {identifier!r}")
+    if (
+        identifier.isdigit()
+        and not allow_numeric_leading_zero
+        and len(identifier) > 1
+        and identifier.startswith("0")
+    ):
+        raise ValueError(
+            f"numeric prerelease identifiers cannot contain leading zeroes: {identifier!r}"
+        )
 
 
 def _parse_semver(current: str) -> tuple[int, int, int, str | None, str | None]:
