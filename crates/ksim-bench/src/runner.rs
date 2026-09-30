@@ -20,9 +20,7 @@ pub fn run_episode(
     policy: Policy,
     seed: u64,
 ) -> Result<EpisodeReport, ScenarioError> {
-    let mut simulation = scenario.build_simulation(seed)?;
-    let mut autoscaler = policy.build(scenario, seed);
-    let trace = record_trace(scenario, seed, &mut simulation, autoscaler.as_mut());
+    let trace = episode_trace(scenario, policy, seed)?;
     Ok(EpisodeReport {
         scenario: scenario.name.clone(),
         policy: policy.name().to_owned(),
@@ -67,8 +65,14 @@ pub fn episode_trace(
     policy: Policy,
     seed: u64,
 ) -> Result<ksim_metrics::trace::EpisodeTrace, ScenarioError> {
-    let _ = (scenario, policy, seed);
-    todo!()
+    let mut simulation = scenario.build_simulation(seed)?;
+    let mut autoscaler = policy.build(scenario, seed);
+    Ok(record_trace(
+        scenario,
+        seed,
+        &mut simulation,
+        autoscaler.as_mut(),
+    ))
 }
 
 /// Episodes for `seeds` consecutive seeds starting at `first_seed`, in seed order.

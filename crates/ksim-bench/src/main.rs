@@ -6,9 +6,9 @@ use std::{
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use ksim_bench::{
-    output::{write_csv, write_json_lines},
+    output::{write_csv, write_json_lines, write_trajectory_csv},
     policy::Policy,
-    runner::run_seeds,
+    runner::{episode_trace, run_seeds},
     scenario::Scenario,
 };
 
@@ -98,6 +98,17 @@ fn run(
 }
 
 fn trajectory(scenario_path: &Path, policy: &str, seed: u64, out: &Path) -> anyhow::Result<()> {
-    let _ = (scenario_path, policy, seed, out);
-    todo!()
+    let policy: Policy = policy.parse()?;
+    let scenario = Scenario::from_toml_file(scenario_path)?;
+    let trace = episode_trace(&scenario, policy, seed)?;
+    let service_names: Vec<String> = scenario
+        .services
+        .iter()
+        .map(|service| service.name.clone())
+        .collect();
+    if let Some(parent) = out.parent() {
+        fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
+    }
+    write_trajectory_csv(&trace, &service_names, File::create(out)?)?;
+    Ok(())
 }

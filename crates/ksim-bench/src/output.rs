@@ -65,6 +65,37 @@ pub fn write_trajectory_csv(
     service_names: &[String],
     writer: impl Write,
 ) -> io::Result<()> {
-    let _ = (trace, service_names, writer);
-    todo!()
+    let mut csv_writer = csv::Writer::from_writer(writer);
+    csv_writer.write_record([
+        "time_s",
+        "service",
+        "demand_rps",
+        "desired",
+        "ready",
+        "cpu_usage_millis",
+        "latency_p95_ms",
+        "error_rate",
+    ])?;
+    for tick in &trace.ticks {
+        if tick.services.len() != service_names.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "tick service count differs from service names",
+            ));
+        }
+        let time_s = (tick.time.as_millis() / 1000).to_string();
+        for (name, sample) in service_names.iter().zip(&tick.services) {
+            csv_writer.write_record([
+                time_s.as_str(),
+                name,
+                &sample.demand_rps.to_string(),
+                &sample.desired.to_string(),
+                &sample.ready.to_string(),
+                &sample.cpu_usage_millis.to_string(),
+                &sample.latency_p95_ms.to_string(),
+                &sample.error_rate.to_string(),
+            ])?;
+        }
+    }
+    csv_writer.flush()
 }
