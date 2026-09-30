@@ -43,4 +43,4 @@ cosign verify ghcr.io/seccodesmith/ksim:<tag> \
 The identity pattern assumes keyless signing from this repository's workflows.
 
 ## Vulnerability policy
-The train stage upgrades Debian packages, `pip` and `setuptools` at build time. Pull requests scan both images with Trivy and fail on HIGH or CRITICAL findings that already have a fixed version; findings without an upstream fix are reported in the SARIF artifact but do not block, since no rebuild can remove them.
+The train stage upgrades Debian packages at build time and uninstalls `pip` after installing the wheel, because pip's vendored `msgpack` and `pkg_resources` carry fixable CVEs and pip is not needed at run time. Pull requests scan both images with Trivy and fail on HIGH or CRITICAL findings that already have a fixed version; findings without an upstream fix are reported in the SARIF artifact but do not block, since no rebuild can remove them. `limit-severities-for-sarif` keeps the SARIF (and so the exit code) to HIGH and CRITICAL; without it trivy-action scans every severity for SARIF output and fails on fixable LOW findings too.

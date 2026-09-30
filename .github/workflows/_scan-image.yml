@@ -35,6 +35,7 @@ jobs:
           input: ${{ inputs.input != '' && 'scan/image.tar' || '' }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          limit-severities-for-sarif: true
           exit-code: '1'
           format: sarif
           output: trivy.sarif
