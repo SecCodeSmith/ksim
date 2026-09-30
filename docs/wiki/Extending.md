@@ -32,4 +32,4 @@ let stack = KubernetesStack::new()
 
 ## Add a performance model or reward
 
-Implement `PerformanceModel` or `RewardFn` against the same contract suites, then select it through `SimulationBuilder`.
+Implement `PerformanceModel` or `RewardFn` against the same contract suites. A performance model is selected through `SimulationBuilder`; a reward (`ksim_env::RewardFn`, `reward(&mut self, &TickSample, &RewardContext) -> f64`) is passed to `Env::with_reward(Box::new(...))`. See the [Training Guide](Training-Guide#reward).

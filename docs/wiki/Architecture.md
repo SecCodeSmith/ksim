@@ -10,10 +10,11 @@
 | `ksim-autoscalers` | HPA, VPA, Cluster Autoscaler baselines, `KubernetesStack`, small ISP traits (the `Autoscaler` trait itself lives in `ksim-core`) | Implemented (Milestone 3) |
 | `ksim-metrics` | benchmark metrics (availability, SLO, SPEC RG elasticity, cost, operational) and reports | Implemented (Milestone 4) |
 | `ksim-bench` | CLI: `run` (scenario TOML x policy x seeds to JSONL/CSV), `list-policies` | Implemented (Milestone 4) |
+| `ksim-env` | RL environment: observation/action layout, `RewardFn` and `WeightedReward`, `Env`, parallel `VectorEnv` | Implemented (Milestone 6) |
 | `ksim-py` | PyO3 bindings, Gymnasium and vector env | `native_version()` only |
 | `ksim-capi` | C ABI, header `ksim.h` via cbindgen | `ksim_version()` only |
 
-Python lives in `python/ksim/` (datasets, gym wrappers, `ksim.analysis` leaderboard and statistics, Implemented in Milestone 4; `ksim.datasets` converters and `.ksimtrace` writer, Implemented in Milestone 5) and stays out of the step loop.
+Python lives in `python/ksim/` (gym wrappers and benchmark-parity `evaluate` over `ksim-env`, Milestone 6; datasets, gym wrappers, `ksim.analysis` leaderboard and statistics, Implemented in Milestone 4; `ksim.datasets` converters and `.ksimtrace` writer, Implemented in Milestone 5) and stays out of the step loop.
 
 ## Dependency direction
 
@@ -34,7 +35,8 @@ trace (Alibaba / Borg / Azure)
 ## Traits and SOLID boundaries
 
 - `Autoscaler::act(&mut self, observation: &Observation) -> Actions` (in `ksim_core::autoscaler`): baselines and RL agents share this path; the observation carries `now`.
-- `WorkloadSource` (a `TraceSource`), `PerformanceModel`, `RewardFn`, `Metric`, `SchedulerPlugin`: extension points.
+- `RewardFn` (in `ksim-env`) scores each environment step; `Env::with_reward` injects it.
+- `WorkloadSource` (a `TraceSource`), `PerformanceModel`, `Metric`, `SchedulerPlugin`: extension points.
 - Small interfaces (interface segregation, in `ksim-autoscalers::traits`): `ReplicaRecommender` (HPA), `ResourceRecommender` (VPA), `NodeProvisioner` (CA). `KubernetesStack` composes any of them into one `Autoscaler`.
 - The engine depends only on traits, injected through `SimulationBuilder`; tests inject fakes.
 - Contract test macros live in `ksim-core` behind the `contract-tests` feature (e.g. `workload_source_contract_tests!`).
