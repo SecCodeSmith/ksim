@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     uv tool run --from "maturin>=1.15.0,<2" maturin build --release --locked \
         --interpreter "$(uv python find 3.13)" --out /wheels
 
-FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
+FROM gcr.io/distroless/cc-debian13:nonroot AS runtime
 LABEL org.opencontainers.image.title="ksim" \
       org.opencontainers.image.description="Trace-driven Kubernetes autoscaler simulator" \
       org.opencontainers.image.source="https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler" \
