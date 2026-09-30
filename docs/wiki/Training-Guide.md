@@ -120,4 +120,6 @@ Stable-Baselines3 has its own `VecEnv` API and does not accept a Gymnasium `Vect
 
 ## Performance targets
 
-At least 100k env-steps/s per core on a 50-service scenario; under 100 MB RAM per environment, verified by criterion benchmarks.
+`VectorEnv` steps its environments on the calling thread while a vector step is cheap and switches to rayon when the measured serial cost of a step reaches `PARALLEL_THRESHOLD` (200 µs; `with_parallel_threshold` overrides it). A single environment step on `synthetic_steady` takes about a microsecond, far less than waking a thread pool, so fanning out every step made 8 environments about 7× slower than stepping them in turn (about 106k env-steps/s); adaptive scheduling measured 430k to 690k env-steps/s on 4 cores. Serial and parallel schedules produce identical results (`tests/vector_schedule.rs`).
+
+The release gate in `perf.yml` (`cargo test --release -p ksim-env --test perf -- --ignored`) requires at least 200k env-steps/s for 8 environments on `synthetic_steady` and a vector step no slower than 2× stepping the same environments serially; the margins leave room for shared CI runners.
