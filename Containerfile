@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
 FROM gcr.io/distroless/static-debian13:nonroot AS runtime
 LABEL org.opencontainers.image.title="ksim" \
       org.opencontainers.image.description="Trace-driven Kubernetes autoscaler simulator" \
-      org.opencontainers.image.source="https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler" \
+      org.opencontainers.image.source="https://github.com/SecCodeSmith/ksim" \
       org.opencontainers.image.licenses="LicenseRef-SecCodeSmith-Commercial" \
       org.opencontainers.image.vendor="SecCodeSmith"
 COPY --from=builder /out/ksim-bench /usr/local/bin/ksim-bench
@@ -35,7 +35,7 @@ CMD ["ksim-bench", "--help"]
 FROM docker.io/library/python:3.14-slim-trixie AS train
 LABEL org.opencontainers.image.title="ksim-train" \
       org.opencontainers.image.description="ksim with Python bindings for autoscaler training" \
-      org.opencontainers.image.source="https://github.com/SecCodeSmith/Cubernetes-Simulator-for-autoscaler" \
+      org.opencontainers.image.source="https://github.com/SecCodeSmith/ksim" \
       org.opencontainers.image.licenses="LicenseRef-SecCodeSmith-Commercial" \
       org.opencontainers.image.vendor="SecCodeSmith"
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
