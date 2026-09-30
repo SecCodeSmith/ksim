@@ -45,7 +45,7 @@ Every workflow file stays at 60 lines or fewer.
 
 ### Version bump rules
 
-- `main`: `X.Y.Z-nightly.YYYYMMDD` (the `-nightly` suffix replaces any previous pre-release suffix, base `X.Y.Z` is unchanged).
+- `main`: `X.Y.Z-dev.YYYYMMDD` (replaces any previous pre-release suffix, base `X.Y.Z` is unchanged). maturin maps it to the PEP 440 dev release `X.Y.Z.devYYYYMMDD`, so the wheel version sorts before `X.Y.Z` in both schemes; a `-nightly.N` suffix has no PEP 440 form and fails every wheel build.
 - `release/X.Y`: patch bump `X.Y.Z` to `X.Y.(Z+1)`; if the current version is already a pre-release of that patch, the pre-release suffix is dropped instead. The branch `X.Y` must match the version, otherwise the run fails.
 - Any other branch is rejected.
 

@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-autoscalers"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "ksim-core",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-bench"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "anyhow",
  "approx",
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-capi"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "ksim-bench",
  "ksim-env",
@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-core"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "criterion",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-env"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "ksim-autoscalers",
@@ -545,7 +545,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-metrics"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "ksim-core",
@@ -556,7 +556,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-perf"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "ksim-core",
@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-py"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "ksim-bench",
  "ksim-env",
@@ -575,7 +575,7 @@ dependencies = [
 
 [[package]]
 name = "ksim-workload"
-version = "0.1.0-nightly.20260930"
+version = "0.1.0-dev.20260930"
 dependencies = [
  "approx",
  "ksim-core",

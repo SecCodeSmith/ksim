@@ -19,7 +19,9 @@ def next_nightly_version(current: str, branch: str, day: date) -> str:
     is_prerelease = "-" in current
 
     if branch == "main":
-        return f"{major}.{minor}.{patch}-nightly.{day:%Y%m%d}"
+        # `-dev.N` is the SemVer prerelease that maturin maps to a PEP 440 dev release
+        # (`X.Y.Z.devN`); `-nightly.N` has no PEP 440 form and breaks wheel builds.
+        return f"{major}.{minor}.{patch}-dev.{day:%Y%m%d}"
 
     release = _RELEASE_BRANCH.match(branch)
     if release is None:
