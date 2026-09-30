@@ -7,6 +7,7 @@ members = [
     "crates/ksim-autoscalers",
     "crates/ksim-metrics",
     "crates/ksim-bench",
+    "crates/ksim-env",
     "crates/ksim-py",
     "crates/ksim-capi",
 ]
@@ -25,6 +26,8 @@ ksim-workload = { path = "crates/ksim-workload" }
 ksim-perf = { path = "crates/ksim-perf" }
 ksim-autoscalers = { path = "crates/ksim-autoscalers" }
 ksim-metrics = { path = "crates/ksim-metrics" }
+ksim-bench = { path = "crates/ksim-bench" }
+ksim-env = { path = "crates/ksim-env" }
 clap = { version = "4.6.7", features = ["derive"] }
 rand = "0.10.3"
 rand_chacha = "0.10.0"
@@ -37,6 +40,9 @@ serde_json = { version = "1.0.151", features = ["float_roundtrip"] }
 toml = "1.1.6"
 csv = "1.4.0"
 pyo3 = { version = "0.29.2", features = ["abi3-py312"] }
+numpy = "0.29.0"
+rayon = "1.12.0"
+thiserror = "2.0.21"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -69,7 +69,19 @@ impl TraceRecorder {
         actions: &Actions,
         demands: &[ServiceDemand],
     ) {
-        let tick = TickSample {
+        let tick = self.sample(observation, actions, demands);
+        self.trace.ticks.push(tick);
+    }
+
+    /// The tick `record` would append for these inputs, without recording it.
+    #[must_use]
+    pub fn sample(
+        &self,
+        observation: &Observation,
+        actions: &Actions,
+        demands: &[ServiceDemand],
+    ) -> TickSample {
+        TickSample {
             time: observation.now,
             services: service_samples(observation, demands),
             nodes: count(observation.nodes.len()),
@@ -77,8 +89,13 @@ impl TraceRecorder {
             replica_changes: replica_changes(observation, actions),
             evictions: actions.evict.iter().sum(),
             node_changes: node_changes(actions),
-        };
-        self.trace.ticks.push(tick);
+        }
+    }
+
+    /// The ticks recorded so far.
+    #[must_use]
+    pub fn trace(&self) -> &EpisodeTrace {
+        &self.trace
     }
 
     fn hourly_cost(&self, observation: &Observation) -> f64 {
@@ -149,4 +166,63 @@ fn node_changes(actions: &Actions) -> u32 {
         .map(|delta| delta.unsigned_abs())
         .sum();
     scaled + count(actions.drain.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use ksim_core::observation::{NodeObservation, PoolObservation, ServiceObservation};
+
+    use super::*;
+
+    fn observation_at(seconds: u64) -> Observation {
+        Observation {
+            now: SimTime::from_secs(seconds),
+            services: vec![ServiceObservation {
+                desired: 3,
+                ready: 2,
+                ..ServiceObservation::default()
+            }],
+            pools: vec![PoolObservation::default()],
+            nodes: Vec::<NodeObservation>::new(),
+            node_pods: Vec::new(),
+        }
+    }
+
+    fn demand(request_rate: f64) -> ServiceDemand {
+        ServiceDemand {
+            request_rate,
+            ..ServiceDemand::default()
+        }
+    }
+
+    #[test]
+    fn sample_does_not_record_and_equals_the_recorded_tick() {
+        let mut recorder = TraceRecorder::new(SimDuration::from_secs(15), vec![0.5]);
+        let observation = observation_at(30);
+        let actions = Actions {
+            replicas: vec![Some(5)],
+            ..Actions::none()
+        };
+        let demands = [demand(10.0)];
+
+        let sample = recorder.sample(&observation, &actions, &demands);
+        assert!(recorder.trace().ticks.is_empty());
+
+        recorder.record(&observation, &actions, &demands);
+        assert_eq!(recorder.trace().ticks, vec![sample]);
+    }
+
+    #[test]
+    fn sample_counts_replica_changes_against_the_given_observation() {
+        let recorder = TraceRecorder::new(SimDuration::from_secs(15), vec![0.5]);
+        let actions = Actions {
+            replicas: vec![Some(5)],
+            ..Actions::none()
+        };
+
+        let sample = recorder.sample(&observation_at(0), &actions, &[demand(1.0)]);
+
+        assert_eq!(sample.replica_changes, 1);
+        assert_eq!(sample.time, SimTime::from_secs(0));
+    }
 }

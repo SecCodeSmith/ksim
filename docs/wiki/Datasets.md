@@ -13,6 +13,15 @@ python -m ksim.datasets convert --source alibaba2018 --input DIR \
 
 `--source` is `alibaba2018`, `alibaba2021`, `azure2019` or `borg2019`; `--tick` seconds (default 15), `--top` services (default 50), `--split` `train` (default), `validation` or `test`. Input files are found by name inside `DIR`. Exit code 2 for a missing input, unknown source or an empty window.
 
+### Scenario generation
+
+```sh
+python -m ksim.datasets scenario --trace data/alibaba2018-train.ksimtrace \
+  --output scenarios/alibaba2018_train.toml
+```
+
+Writes a benchmark scenario with one `[[services]]` entry per trace service, so real traces need no hand-written entries (`python/ksim/datasets/scenario.py`). Sizing per service: CPU requests `--requests-cpu` (default 500 m, limits twice that); `cpu_millis_per_request` is the median CPU per request over ticks with traffic (falls back to `--cpu-per-request`, default 50); initial replicas cover the P95 CPU at the HPA target (`--hpa-target`, default 0.6); `max_replicas` covers twice the peak (at least 10); memory requests are the P95 memory per initial replica rounded up to 64 MiB. One pool `default` (`--pool-cpu` 8000 m, `--pool-memory` 32768 MiB, `--max-nodes` 50, `--price` 0.3 per hour) starts with enough nodes for the initial replicas. The `[trace]` path is relative to the output file, `duration_s` defaults to the trace length (`--duration`), and the SLO is P95 latency `--slo-latency` (default 250 ms), 1% errors, 99.9% availability. `--name` overrides the scenario name (default: trace file stem). CI generates and runs a scenario for the fixture trace in `bench-smoke`.
+
 ### Normalisation
 
 1. Keep samples inside the split window; tick = `floor((time_s - start) / tick)`.
@@ -33,7 +42,7 @@ Splits are temporal to avoid leakage; validation and test are never used for tun
 
 ### Column mapping and unit assumptions
 
-Where a trace publishes only normalised units or no request counts, the converter needs an assumption. These are keyword defaults of the loader functions (`python/ksim/datasets/*.py`); the `convert` CLI does not expose flags for them, so change them by calling the loader from Python.
+Where a trace publishes only normalised units or no request counts, the converter needs an assumption. These are keyword defaults of the loader functions (`python/ksim/datasets/*.py`), also settable on the `convert` CLI: `--memory-bytes-per-unit` and `--cpu-millis-per-request` (alibaba2018, borg2019), `--cpu-millis-per-unit` (borg2019), `--container-cpu-millis` and `--container-memory-bytes` (alibaba2021). A flag the source does not use exits with code 2 rather than being silently ignored.
 
 | Source | Files and columns | request_rate | cpu_millis | memory_bytes |
 |---|---|---|---|---|

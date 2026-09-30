@@ -30,7 +30,8 @@ Every workflow file stays at 60 lines or fewer.
 | `security-deps.yml` | push, PR, weekly | cargo-deny, cargo-audit, pip-audit |
 | `security-codeql.yml` | push, PR, weekly | CodeQL for Rust and Python |
 | `security-secrets.yml` | push, PR | gitleaks |
-| `perf.yml` | push, PR | release-mode `ksim-core` throughput gate (`cargo test --release -p ksim-core --test perf -- --ignored`) |
+| `perf.yml` | push, PR | release-mode throughput gates: `ksim-core` engine steps and the `ksim-env` vector environment (`cargo test --release -p <crate> --test perf -- --ignored`) |
+| `capi-smoke.yml` | push, PR | Builds `libksim`, generates `ksim.h` with cbindgen, compiles `crates/ksim-capi/tests/c/smoke.c` with `-Wall -Wextra -Werror` and runs one episode through the C ABI |
 | `bench-smoke.yml` | push, PR | builds `ksim-bench`, runs `synthetic_steady` for `k8s` and `oracle` (2 seeds), writes the `ksim.analysis` leaderboard to the job summary |
 | `container-check.yml` | PR touching container or source files | `_build-image-docker` and `_build-image-podman` (no push) + Trivy scan |
 

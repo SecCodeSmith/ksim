@@ -1,0 +1,27 @@
+name: capi-smoke
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: capi-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  c-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2.9.2
+      - uses: taiki-e/install-action@v2.87.22
+        with:
+          tool: cbindgen
+      - run: cargo build --release -p ksim-capi
+      - run: |
+          cbindgen --config crates/ksim-capi/cbindgen.toml --crate ksim-capi \
+            --output target/include/ksim.h
+      - run: |
+          cc -std=c99 -Wall -Wextra -Werror -Itarget/include crates/ksim-capi/tests/c/smoke.c \
+            -Ltarget/release -lksim -o target/smoke
+      - run: LD_LIBRARY_PATH=target/release target/smoke scenarios/synthetic_steady.toml
