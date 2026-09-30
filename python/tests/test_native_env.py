@@ -59,11 +59,17 @@ class TestKsimEnvReset:
         assert np.all(obs <= native.OBSERVATION_HIGH)
 
     def test_reset_multiple_times_with_different_seeds(self):
-        """Resetting with different seeds produces different observations."""
+        """Different seeds give different trajectories under noisy demand."""
         env = native.KsimEnv(TINY_SCENARIO)
-        obs1 = env.reset(seed=0)
-        obs2 = env.reset(seed=1)
-        assert not np.allclose(obs1, obs2)
+        action = np.full(len(env.action_nvec), 3, dtype=np.uint32)
+
+        def observation_after_steps(seed: int) -> np.ndarray:
+            env.reset(seed=seed)
+            for _ in range(5):
+                obs, _, _, _ = env.step(action)
+            return obs
+
+        assert not np.allclose(observation_after_steps(0), observation_after_steps(1))
 
     def test_reset_deterministic_with_same_seed(self):
         """Resetting with the same seed produces the same observation."""
@@ -229,14 +235,10 @@ class TestKsimEnvServiceSlots:
 class TestKsimEnvMetrics:
     """Test episode metrics."""
 
-    def test_episode_metrics_empty_before_step(self):
-        """episode_metrics returns empty dict before any step."""
+    def test_episode_metrics_empty_before_reset(self):
+        """episode_metrics returns an empty dict before the first reset."""
         env = native.KsimEnv(TINY_SCENARIO)
-        env.reset(seed=0)
-        metrics = env.episode_metrics()
-        assert isinstance(metrics, dict)
-        # Before first step, metrics should be empty or minimal
-        assert metrics == {}
+        assert env.episode_metrics() == {}
 
     def test_episode_metrics_non_empty_after_steps(self):
         """episode_metrics returns non-empty dict after some steps."""
@@ -345,10 +347,11 @@ class TestKsimVectorEnvStep:
         env = native.KsimVectorEnv(TINY_SCENARIO, num_envs=2)
         env.reset(seed=0)
         actions = np.zeros((2, len(env.action_nvec)), dtype=np.uint32)
-        for step_num in range(env.first().episode_steps + 2):
-            _, rewards, terminated, truncated = env.step(actions)
-            if step_num >= env.first().episode_steps:
-                # After truncation, next step should reset
-                assert np.all(rewards == 0.0)
-                assert np.all(~terminated)
-                assert np.all(~truncated)
+        episode_steps = native.KsimEnv(TINY_SCENARIO).episode_steps
+        for _ in range(episode_steps):
+            _, _, _, truncated = env.step(actions)
+        assert np.all(truncated)
+        _, rewards, terminated, truncated = env.step(actions)
+        assert np.all(rewards == 0.0)
+        assert np.all(~terminated)
+        assert np.all(~truncated)

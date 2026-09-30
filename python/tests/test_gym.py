@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import gymnasium
+import gymnasium.utils.env_checker
 import ksim._native as native
 import numpy as np
 import pytest
@@ -111,9 +112,17 @@ class TestKsimGymEnvReset:
         """reset() without seed continues the PRNG sequence."""
         env = make(TINY_SCENARIO)
         env.reset(seed=100)
-        obs1, _ = env.reset()
-        obs2, _ = env.reset()
-        assert not np.allclose(obs1, obs2)
+        action = np.full(len(env.action_space.nvec), 3, dtype=np.int64)
+
+        def observation_after_unseeded_reset() -> np.ndarray:
+            env.reset()
+            for _ in range(5):
+                obs, _, _, _, _ = env.step(action)
+            return obs
+
+        assert not np.allclose(
+            observation_after_unseeded_reset(), observation_after_unseeded_reset()
+        )
 
     def test_reset_info_dict_empty(self):
         """reset info dict is empty."""
@@ -410,9 +419,8 @@ class TestKsimVectorGymEnvStep:
         single_env = make(TINY_SCENARIO)
         episode_steps = single_env.unwrapped.episode_steps
         actions = np.zeros((4, len(single_env.action_space.nvec)), dtype=np.int64)
-        for step_num in range(episode_steps + 1):
+        for _ in range(episode_steps - 1):
             _, _, _, truncated, _ = env.step(actions)
-            if step_num < episode_steps:
-                assert not np.any(truncated)
-            else:
-                assert np.all(truncated)
+            assert not np.any(truncated)
+        _, _, _, truncated, _ = env.step(actions)
+        assert np.all(truncated)

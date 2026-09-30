@@ -22,7 +22,7 @@ class TestEvaluateBasics:
 
     def test_evaluate_returns_list_of_dicts(self):
         """evaluate returns a list of dicts."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         assert isinstance(reports, list)
         assert len(reports) == 1
@@ -30,14 +30,14 @@ class TestEvaluateBasics:
 
     def test_evaluate_returns_one_report_per_seed(self):
         """evaluate returns one report per seed."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         seeds = [0, 1, 2]
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=seeds)
         assert len(reports) == 3
 
     def test_evaluate_returns_reports_in_seed_order(self):
         """evaluate returns reports in the same order as seeds."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         seeds = [5, 1, 3]
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=seeds)
         assert [r["seed"] for r in reports] == [5, 1, 3]
@@ -48,31 +48,31 @@ class TestEvaluateReportStructure:
 
     def test_report_has_scenario_key(self):
         """Each report has a 'scenario' key."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         assert "scenario" in reports[0]
 
     def test_report_has_policy_key(self):
         """Each report has a 'policy' key."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         assert "policy" in reports[0]
 
     def test_report_has_seed_key(self):
         """Each report has a 'seed' key."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         assert "seed" in reports[0]
 
     def test_report_has_metrics_key(self):
         """Each report has a 'metrics' key."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         assert "metrics" in reports[0]
 
     def test_scenario_equals_toml_name(self):
         """scenario field equals the 'name' from TOML."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         with open(TINY_SCENARIO, "rb") as f:
             config = tomllib.load(f)
@@ -80,20 +80,20 @@ class TestEvaluateReportStructure:
 
     def test_policy_equals_policy_name(self):
         """policy field equals the policy_name parameter."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         policy_name = "my_test_policy"
         reports = evaluate(TINY_SCENARIO, policy, policy_name, seeds=[0])
         assert reports[0]["policy"] == policy_name
 
     def test_seed_equals_input_seed(self):
         """seed field equals the input seed."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[42])
         assert reports[0]["seed"] == 42
 
     def test_metrics_is_non_empty_dict(self):
         """metrics is a non-empty dict."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         metrics = reports[0]["metrics"]
         assert isinstance(metrics, dict)
@@ -101,7 +101,7 @@ class TestEvaluateReportStructure:
 
     def test_metrics_contains_float_values(self):
         """metrics dict contains float values."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0])
         metrics = reports[0]["metrics"]
         assert all(isinstance(v, (float, int)) for v in metrics.values())
@@ -117,7 +117,7 @@ class TestEvaluatePolicyCallCount:
         def counting_policy(obs: np.ndarray) -> np.ndarray:
             nonlocal call_count
             call_count += 1
-            return np.full(3, 1, dtype=np.uint32)
+            return np.full(2, 3, dtype=np.uint32)
 
         env = native.KsimEnv(str(TINY_SCENARIO))
         episode_steps = env.episode_steps
@@ -131,7 +131,7 @@ class TestEvaluatePolicyCallCount:
         def counting_policy(obs: np.ndarray) -> np.ndarray:
             nonlocal call_count
             call_count += 1
-            return np.full(3, 1, dtype=np.uint32)
+            return np.full(2, 3, dtype=np.uint32)
 
         env = native.KsimEnv(str(TINY_SCENARIO))
         episode_steps = env.episode_steps
@@ -145,7 +145,7 @@ class TestEvaluatePolicyCallCount:
 
         def dtype_checking_policy(obs: np.ndarray) -> np.ndarray:
             received_dtypes.append(obs.dtype)
-            return np.full(3, 1, dtype=np.uint32)
+            return np.full(2, 3, dtype=np.uint32)
 
         evaluate(TINY_SCENARIO, dtype_checking_policy, "test_policy", seeds=[0])
         assert all(dtype == np.float32 for dtype in received_dtypes)
@@ -158,7 +158,7 @@ class TestEvaluatePolicyCallCount:
 
         def length_checking_policy(obs: np.ndarray) -> np.ndarray:
             received_lengths.append(len(obs))
-            return np.full(3, 1, dtype=np.uint32)
+            return np.full(2, 3, dtype=np.uint32)
 
         evaluate(TINY_SCENARIO, length_checking_policy, "test_policy", seeds=[0])
         assert all(length == expected_len for length in received_lengths)
@@ -169,14 +169,14 @@ class TestEvaluateDeterminism:
 
     def test_same_seeds_produce_identical_reports(self):
         """Same seeds produce identical reports."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports1 = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[42, 43])
         reports2 = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[42, 43])
         assert reports1 == reports2
 
     def test_different_seeds_produce_different_metrics(self):
         """Different seeds produce different metrics."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0, 1])
         # Metrics may differ between seeds
         metrics1 = reports[0]["metrics"]
@@ -190,7 +190,7 @@ class TestEvaluateErrors:
 
     def test_empty_seeds_raises_value_error(self):
         """Empty seeds list raises ValueError."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         with pytest.raises(ValueError):
             evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[])
 
@@ -198,7 +198,7 @@ class TestEvaluateErrors:
         """Policy returning wrong-length actions raises ValueError."""
 
         def bad_policy(obs: np.ndarray) -> np.ndarray:
-            return np.array([1, 2], dtype=np.uint32)  # Wrong length
+            return np.array([1, 2, 3], dtype=np.uint32)
 
         with pytest.raises(ValueError):
             evaluate(TINY_SCENARIO, bad_policy, "test_policy", seeds=[0])
@@ -212,7 +212,7 @@ class TestEvaluateWithEnvOptions:
         env_default = native.KsimEnv(str(TINY_SCENARIO))
         env_custom = native.KsimEnv(str(TINY_SCENARIO), max_replica_step=1)
         # The action size should be different
-        assert len(env_default.action_nvec) != len(env_custom.action_nvec)
+        assert env_default.action_nvec != env_custom.action_nvec
 
     def test_policy_with_custom_options(self):
         """evaluate works with custom EnvOptions."""
@@ -392,7 +392,7 @@ class TestEvaluateIntegration:
 
     def test_evaluate_and_write_roundtrip(self, tmp_path):
         """evaluate -> write_reports -> load_reports roundtrip."""
-        policy = lambda obs: np.full(3, 1, dtype=np.uint32)  # noqa: E731
+        policy = lambda obs: np.full(2, 3, dtype=np.uint32)  # noqa: E731
         reports = evaluate(TINY_SCENARIO, policy, "test_policy", seeds=[0, 1])
         write_reports(reports, tmp_path)
         loaded = load_reports(tmp_path)
@@ -413,7 +413,7 @@ class TestEvaluateParity:
 
         # Define a zero-delta policy (keep replicas constant)
         def zero_delta_policy(obs: np.ndarray) -> np.ndarray:
-            return np.full(3, 0, dtype=np.uint32)
+            return np.full(2, 3, dtype=np.uint32)
 
         # Run evaluate
         reports = evaluate(TINY_SCENARIO, zero_delta_policy, "ca", seeds=[1])
@@ -433,7 +433,7 @@ class TestEvaluateParity:
                 "1",
                 "--first-seed",
                 "1",
-                "--output",
+                "--out",
                 str(bench_output),
             ],
             capture_output=True,
