@@ -1,0 +1,55 @@
+name: validation
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 4 * * 1'
+  push:
+    paths:
+      - scenarios/validation_php_apache.toml
+      - deploy/validation/**
+      - tools/validation/**
+      - python/ksim/validation/**
+      - .github/workflows/validation.yml
+permissions:
+  contents: read
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  kind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/setup-rust-python
+      - run: cargo build --release -p ksim-bench
+      - run: uv run --no-sync maturin develop --release
+      - uses: helm/kind-action@v1.15.0
+        with:
+          version: v0.33.0
+          cluster_name: ksim
+      - uses: grafana/setup-k6-action@v1.2.2
+        with:
+          k6-version: '2.3.0'
+      - name: Install metrics-server
+        run: |
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
+          kubectl -n kube-system patch deployment metrics-server --type=json \
+            -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+          kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+      - name: Deploy php-apache
+        run: |
+          kubectl apply -f deploy/validation/php-apache.yaml
+          kubectl rollout status deployment/php-apache --timeout=300s
+          node_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ksim-control-plane)
+          echo "APP_URL=http://${node_ip}:30080/" >> "$GITHUB_ENV"
+      - run: curl --retry 10 --retry-all-errors --retry-delay 3 -sf "$APP_URL"
+      - run: tools/validation/calibrate.sh "$APP_URL" 8 validation/calibrated.toml
+      - run: tools/validation/replay.sh "$APP_URL" validation/calibrated.toml validation
+      - if: always()
+        run: cat validation/report.md >> "$GITHUB_STEP_SUMMARY" || true
+      - if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: validation
+          path: validation/
