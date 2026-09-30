@@ -32,7 +32,7 @@ Every workflow file stays at 60 lines or fewer.
 | `security-secrets.yml` | push, PR | gitleaks |
 | `perf.yml` | push, PR | release-mode throughput gates: `ksim-core` engine steps and the `ksim-env` vector environment (`cargo test --release -p <crate> --test perf -- --ignored`) |
 | `capi-smoke.yml` | push, PR | Builds `libksim`, generates `ksim.h` with cbindgen, compiles `crates/ksim-capi/tests/c/smoke.c` with `-Wall -Wextra -Werror` and runs one episode through the C ABI |
-| `validation.yml` | manual, weekly, push to validation files | kind cluster + metrics-server + k6 replay of `scenarios/validation_php_apache.toml`; compares the real HPA with the simulated one ([Validation](Validation)) |
+| `validation.yml` | manual, weekly, push to validation files or to the crates the simulated HPA depends on (`ksim-core`, `ksim-autoscalers`, `ksim-perf`, `ksim-bench`, `Cargo.lock`) | kind cluster + metrics-server + k6 replay of `scenarios/validation_php_apache.toml`; compares the real HPA with the simulated one ([Validation](Validation)) |
 | `bench-smoke.yml` | push, PR | builds `ksim-bench`, runs `synthetic_steady` for `k8s` and `oracle` (2 seeds), writes the `ksim.analysis` leaderboard to the job summary |
 | `container-check.yml` | PR touching container or source files | `_build-image-docker` and `_build-image-podman` (no push) + Trivy scan |
 

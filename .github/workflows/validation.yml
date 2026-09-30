@@ -10,6 +10,11 @@ on:
       - tools/validation/**
       - python/ksim/validation/**
       - .github/workflows/validation.yml
+      - crates/ksim-core/**
+      - crates/ksim-autoscalers/**
+      - crates/ksim-perf/**
+      - crates/ksim-bench/**
+      - Cargo.lock
 permissions:
   contents: read
 concurrency:
