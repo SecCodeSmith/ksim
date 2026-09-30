@@ -14,7 +14,7 @@ Every workflow file stays at 60 lines or fewer.
 | `_build-image-docker` | Docker buildx image build, optional multi-arch push |
 | `_build-image-podman` | Podman image build, optional push |
 | `_image-tags` | namespace, version and tag list for `main`, `release/*` or a `v*` tag |
-| `_scan-image` | Trivy scan |
+| `_scan-image` | Trivy scan; fails on HIGH or CRITICAL vulnerabilities that have a fixed version (`ignore-unfixed`), SARIF kept as an artifact |
 | `_sign-image` | SBOM (anchore), cosign sign and attest |
 | `_verify-image` | `ksim-bench --version` via `docker run` and `podman run` |
 | `_bump-version` | version bump |
