@@ -47,6 +47,7 @@ Every workflow file stays at 60 lines or fewer.
 - `main`: `X.Y.Z-nightly.YYYYMMDD` (the `-nightly` suffix replaces any previous pre-release suffix, base `X.Y.Z` is unchanged).
 - `release/X.Y`: patch bump `X.Y.Z` to `X.Y.(Z+1)`; if the current version is already a pre-release of that patch, the pre-release suffix is dropped instead. The branch `X.Y` must match the version, otherwise the run fails.
 - Any other branch is rejected.
+- Version strings follow SemVer 2.0.0: prerelease identifiers are validated, numeric prerelease identifiers cannot contain leading zeroes, and build metadata such as `+build.9` is accepted and ignored for bump precedence.
 
 ## Release (Planned)
 
