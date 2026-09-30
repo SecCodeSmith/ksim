@@ -48,6 +48,7 @@ Every workflow file stays at 60 lines or fewer.
 - `release/X.Y`: patch bump `X.Y.Z` to `X.Y.(Z+1)`; if the current version is already a pre-release of that patch, the pre-release suffix is dropped instead. The branch `X.Y` must match the version, otherwise the run fails.
 - Any other branch is rejected.
 - Version strings follow SemVer 2.0.0: prerelease identifiers are validated, numeric prerelease identifiers cannot contain leading zeroes, and build metadata such as `+build.9` is accepted and ignored for bump precedence.
+- Python wheel metadata uses PEP 440 normalization (for example `-beta` in Cargo becomes `b0`), and `ksim.native_version()` mirrors that normalized package version.
 
 ## Release (Planned)
 
