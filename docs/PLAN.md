@@ -197,7 +197,7 @@ Every milestone follows red → green → refactor and ends with its wiki pages 
 4. **Metrics + bench CLI**: SLO/availability, SPEC elasticity, cost; scenario TOML; reports.
 5. **Datasets**: `.ksimtrace` format + normalizers in order Alibaba 2018 → Alibaba 2021/22 → Azure 2019 → Borg 2019 (BigQuery export needs user GCP credentials; document it).
 6. **Python/Gym bindings + vector env**, example PPO training script (SB3) vs. HPA baseline.
-7. **Validation & calibration**: compare simulated HPA behavior against a real `kind` cluster run of the same scaled trace (k6 load generator) — report replica-count and latency error; document model limitations.
+7. **Validation & calibration**: compare simulated HPA behavior against a real `kind` cluster run of the same scaled trace (k6 load generator) — report replica-count and latency error; document model limitations. **Implemented**: `validation.yml`, results and limitations in [Validation](wiki/Validation.md).
 
 ## Verification
 - Git history shows test commits preceding implementation commits per feature; `cargo deny check` and `cargo outdated --exit-code 1` pass (latest stable deps).
