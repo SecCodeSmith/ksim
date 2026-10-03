@@ -16,6 +16,28 @@ The demand is a flash crowd (2 requests/s, a jump to 18 at 180 s, exponential de
 
 The job reports the numbers of every run in its summary and artifact. There are no pass/fail thresholds yet: they will be set from the spread of the first runs, so that the workflow can then gate regressions in the model.
 
+### First complete run (2026-09-30)
+
+[Run 36771845206](https://github.com/SecCodeSmith/ksim/actions/runs/36771845206), commit `8c8a8b2`, 100 ticks of 15 s.
+
+| Metric | Value |
+|---|---|
+| Ready replicas: MAE / RMSE / max error | 2.55 / 3.49 / 6 |
+| Desired replicas: MAE | 1.92 |
+| Scale-up lag (real minus simulated) | 165 s |
+| p95 latency: median relative error | 0.09 |
+| Error rate: MAE | 0.01 |
+
+Calibration measured 516m CPU at 8 requests/s, so `cpu_millis_per_request = 64.5`. An earlier run on another runner measured 387m (48 ms per request), so the calibrated cost varies by about 30 % between shared runners. That is why each run calibrates before it simulates.
+
+What the numbers say:
+
+- **Scale-up timing is the main gap.** The simulated HPA reacts to the flash crowd 165 s before the real one, and most of the replica error comes from that lag rather than from the replica count it settles on (desired MAE 1.92 over a 1 to 10 range).
+- **Latency agrees where both sides serve traffic normally.** The median per-tick p95 error is 9 %.
+- **The real cluster saturated during the lag.** k6 sent 9,319 requests with none failing, but reached its 200 virtual-user cap at the peak and dropped 198 iterations. Its overall p95 was 16.6 s while requests queued on too few replicas. The observed offered load therefore dipped slightly below the simulated demand at the peak.
+
+Candidate causes of the lag, not yet tested: the HPA's CPU initialization period and the readiness delay of new pods, the metrics-server scrape window together with the HPA sync period (the simulator uses a one-scrape lag on the same 15 s grid), and container start on a loaded node. Isolating them, and setting thresholds from several runs, is follow-up work.
+
 ## Known limitations
 
 - **Single app, single node.** One CPU-bound service on one kind node; the Cluster Autoscaler, VPA, scheduling pressure and multi-service interference are not validated here.
