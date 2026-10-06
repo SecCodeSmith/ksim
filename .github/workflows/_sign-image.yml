@@ -27,7 +27,7 @@ jobs:
           digest="$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')"
           echo "ref=${REF%:*}@$digest" >> "$GITHUB_OUTPUT"
       - uses: sigstore/cosign-installer@v4.1.2
-      - uses: anchore/sbom-action@v0.24.2
+      - uses: anchore/sbom-action@v0.24.3
         with:
           image: ${{ steps.digest.outputs.ref }}
           format: spdx-json
