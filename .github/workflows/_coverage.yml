@@ -21,7 +21,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-rust-python
-      - uses: taiki-e/install-action@v2.87.22
+      - uses: taiki-e/install-action@v2.87.27
         with:
           tool: cargo-llvm-cov,cargo-nextest
       - run: >-
@@ -47,7 +47,7 @@ jobs:
           files: lcov.info,coverage.xml
           fail_ci_if_error: false
       - if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: coverage-lcov
           path: |

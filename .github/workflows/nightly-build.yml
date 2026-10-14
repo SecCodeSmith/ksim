@@ -35,7 +35,7 @@ jobs:
         run: |
           version="$(sed -n '/^\[workspace.package\]/,/^\[/{s/^version *= *"\(.*\)"/\1/p}' Cargo.toml)"
           echo "value=$version" >> "$GITHUB_OUTPUT"
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@v8.0.2
         with:
           path: dist
           merge-multiple: true

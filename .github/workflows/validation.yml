@@ -29,7 +29,7 @@ jobs:
       - uses: ./.github/actions/setup-rust-python
       - run: cargo build --release -p ksim-bench
       - run: uv run --no-sync maturin develop --release
-      - uses: helm/kind-action@v1.15.0
+      - uses: helm/kind-action@v1.15.1
         with:
           version: v0.33.0
           cluster_name: ksim
@@ -56,7 +56,7 @@ jobs:
       - if: always()
         run: cat validation/report.md >> "$GITHUB_STEP_SUMMARY" || true
       - if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: validation
           path: validation/
