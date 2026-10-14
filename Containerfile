@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM docker.io/library/rust:1.98.1-slim-trixie AS builder
+FROM docker.io/library/rust:1.99.0-slim-trixie AS builder
 ENV RUSTUP_TOOLCHAIN=1.98.1
 WORKDIR /src
 COPY . .
@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
        cargo build --release --locked -p ksim-bench --target "$host" \
     && install -D "target/$host/release/ksim-bench" /out/ksim-bench
 
-FROM docker.io/library/rust:1.98.1-slim-trixie AS wheel-builder
+FROM docker.io/library/rust:1.99.0-slim-trixie AS wheel-builder
 ENV RUSTUP_TOOLCHAIN=1.98.1
 COPY --from=ghcr.io/astral-sh/uv:0.12.20 /uv /usr/local/bin/uv
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
