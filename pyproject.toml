@@ -11,27 +11,27 @@ dynamic = ["version"]
 dependencies = []
 
 [project.optional-dependencies]
-gym = ["gymnasium>=1.3.0", "numpy>=2.5.3"]
-datasets = ["polars>=1.44.2", "pyarrow>=25.0.1"]
-analysis = ["numpy>=2.5.3", "scipy>=1.18.1", "matplotlib>=3.11.2"]
-borg = ["google-cloud-bigquery>=3.45.2"]
-train = ["stable-baselines3>=2.9.0", "sb3-contrib>=2.9.0", "torch>=2.14.0"]
+gym = ["gymnasium>=1.4.0", "numpy>=2.5.4"]
+datasets = ["polars>=2.0.0", "pyarrow>=26.0.0"]
+analysis = ["numpy>=2.5.4", "scipy>=1.18.1", "matplotlib>=3.11.2"]
+borg = ["google-cloud-bigquery>=3.46.1"]
+train = ["stable-baselines3>=2.9.0", "sb3-contrib>=2.9.0", "torch>=2.14.1"]
 
 [dependency-groups]
 dev = [
     "maturin>=1.15.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
-    "hypothesis>=6.168.3",
-    "ruff>=0.16.9",
-    "mypy>=2.3.1",
+    "hypothesis>=6.169.0",
+    "ruff>=0.17.0",
+    "mypy>=2.4.0",
     "pip-audit>=2.10.1",
-    "numpy>=2.5.3",
+    "numpy>=2.5.4",
     "scipy>=1.18.1",
     "scipy-stubs>=1.18.1.1",
-    "polars>=1.44.2",
-    "pyarrow>=25.0.1",
-    "gymnasium>=1.3.0",
+    "polars>=2.0.0",
+    "pyarrow>=26.0.0",
+    "gymnasium>=1.4.0",
 ]
 
 [tool.maturin]
