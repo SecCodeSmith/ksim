@@ -12,4 +12,4 @@ def native_version() -> str:
     return __version__
 
 
-__all__ = ["__version__", "native_version", "_native_version"]
+__all__ = ["__version__", "_native_version", "native_version"]
