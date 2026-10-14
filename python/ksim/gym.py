@@ -62,7 +62,7 @@ def _draw_seed(generator: np.random.Generator) -> int:
     return int(generator.integers(0, SEED_BOUND))
 
 
-def _observation_space(observation_len: int) -> gymnasium.spaces.Box:
+def _observation_space(observation_len: int) -> gymnasium.spaces.Box[np.float32]:
     return gymnasium.spaces.Box(
         _native.OBSERVATION_LOW,
         _native.OBSERVATION_HIGH,
