@@ -30,7 +30,7 @@ Every workflow file stays at 60 lines or fewer.
 | `security-deps.yml` | push, PR, weekly | cargo-deny, cargo-audit, pip-audit |
 | `security-codeql.yml` | push, PR, weekly | CodeQL for Rust and Python |
 | `security-secrets.yml` | push, PR | gitleaks |
-| `perf.yml` | push, PR | release-mode throughput gates: `ksim-core` engine steps and the `ksim-env` vector environment (`cargo test --release -p <crate> --test perf -- --ignored --test-threads=1`); single-threaded because the gates time themselves and two timing tests sharing the runner's cores measure contention, not the code |
+| `perf.yml` | push, PR | release-mode throughput gates: `ksim-core` engine steps and the `ksim-env` vector environment (`cargo test --release -p <crate> --test perf -- --ignored --nocapture --test-threads=1`); `--test-threads=1` because each perf binary holds several timing tests that would otherwise run concurrently and measure each other's contention instead of the code |
 | `capi-smoke.yml` | push, PR | Builds `libksim`, generates `ksim.h` with cbindgen, compiles `crates/ksim-capi/tests/c/smoke.c` with `-Wall -Wextra -Werror` and runs one episode through the C ABI |
 | `validation.yml` | manual, weekly, push to validation files or to the crates the simulated HPA depends on (`ksim-core`, `ksim-autoscalers`, `ksim-perf`, `ksim-bench`, `Cargo.lock`) | kind cluster + metrics-server + k6 replay of `scenarios/validation_php_apache.toml`; compares the real HPA with the simulated one ([Validation](Validation)) |
 | `bench-smoke.yml` | push, PR | builds `ksim-bench`, runs `synthetic_steady` for `k8s` and `oracle` (2 seeds), writes the `ksim.analysis` leaderboard to the job summary |
