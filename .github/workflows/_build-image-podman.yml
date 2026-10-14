@@ -46,7 +46,7 @@ jobs:
           first="$(head -n1 <<< "$TAGS")"
           podman save --format docker-archive -o "$RUNNER_TEMP/image.tar" "$IMAGE:$first"
       - if: '!inputs.push'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: image-podman-${{ inputs.target }}
           path: ${{ runner.temp }}/image.tar

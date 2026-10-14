@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - run: rustup show
-      - uses: taiki-e/install-action@v2.87.22
+      - uses: taiki-e/install-action@v2.87.27
         with:
           tool: cargo-audit
       - run: cargo audit
@@ -28,6 +28,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.0
       - run: uv export --no-emit-project --all-extras --no-hashes -o requirements.txt
       - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip

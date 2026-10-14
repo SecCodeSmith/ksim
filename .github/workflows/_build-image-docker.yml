@@ -50,7 +50,7 @@ jobs:
           cache-from: type=gha,scope=${{ inputs.target }}
           cache-to: type=gha,mode=max,scope=${{ inputs.target }}
       - if: '!inputs.push'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: image-docker-${{ inputs.target }}
           path: ${{ runner.temp }}/image.tar
