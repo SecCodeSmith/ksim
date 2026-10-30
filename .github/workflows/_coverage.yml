@@ -21,7 +21,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-rust-python
-      - uses: taiki-e/install-action@v2.87.27
+      - uses: taiki-e/install-action@v2.87.31
         with:
           tool: cargo-llvm-cov,cargo-nextest
       - run: >-
