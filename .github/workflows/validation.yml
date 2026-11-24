@@ -29,11 +29,11 @@ jobs:
       - uses: ./.github/actions/setup-rust-python
       - run: cargo build --release -p ksim-bench
       - run: uv run --no-sync maturin develop --release
-      - uses: helm/kind-action@v1.15.1
+      - uses: helm/kind-action@v1.15.2
         with:
           version: v0.33.0
           cluster_name: ksim
-      - uses: grafana/setup-k6-action@v1.2.2
+      - uses: grafana/setup-k6-action@v1.3.0
         with:
           k6-version: '2.3.0'
       - name: Install metrics-server
